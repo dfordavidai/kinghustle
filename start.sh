@@ -2,62 +2,68 @@
 set -e
 
 echo "=== HustleKingdom Boot ==="
-echo "PHP version: $(php -v | head -1)"
+echo "PHP: $(php82 -v | head -1)"
 
-# ── 1. Find the active php.ini and all conf.d directories ──────────────────
-PHP_INI=$(php --ini | grep "Loaded Configuration" | awk '{print $NF}')
-echo "Loaded php.ini: $PHP_INI"
+# Create required dirs
+mkdir -p /tmp/sessions /app/logs
 
-# Collect every scan dir PHP knows about
-SCAN_DIRS=$(php --ini | grep "Additional .ini files parsed" -A 999 | tail -n +2 | grep -oP '/[^,\s]+' | xargs -I{} dirname {} | sort -u)
+# --- Diagnose what PHP sees ---
+echo "Extension dir: $(php82 -r 'echo ini_get('"'"'extension_dir'"'"');')"
+echo "Loaded modules: $(php82 -m 2>/dev/null | tr '\n' ' ')"
 
-# Fallback: common Nix/Railway paths
-FALLBACK_DIRS="/etc/php82/conf.d /etc/php8/conf.d /etc/php/conf.d /usr/local/etc/php/conf.d /nix/store/*/etc/php82/conf.d"
+# --- Check if pdo_mysql is loaded. If not, find and load it from Nix store ---
+if ! php82 -m 2>/dev/null | grep -qi pdo_mysql; then
+    echo "pdo_mysql not loaded — searching Nix store..."
 
-# ── 2. Find where .so extensions actually live ────────────────────────────
-EXT_DIR=$(php -r "echo ini_get('extension_dir');" 2>/dev/null || php -i | grep "extension_dir" | awk '{print $NF}')
-echo "Extension dir: $EXT_DIR"
+    # Find the actual .so files in /nix/store
+    PDO_SO=$(find /nix/store -name "pdo.so" 2>/dev/null | head -1)
+    PDO_MYSQL_SO=$(find /nix/store -name "pdo_mysql.so" 2>/dev/null | head -1)
 
-# ── 3. Write pdo + pdo_mysql ini into every conf.d we can find ───────────
-enable_ext() {
-    local dir="$1"
-    if [ -d "$dir" ]; then
-        echo "extension=pdo.so"       > "$dir/05-pdo.ini"
-        echo "extension=pdo_mysql.so" > "$dir/06-pdo_mysql.ini"
-        echo "  → Wrote ini files to $dir"
+    echo "Found pdo.so: $PDO_SO"
+    echo "Found pdo_mysql.so: $PDO_MYSQL_SO"
+
+    # Write absolute-path ini files to /tmp (always writable)
+    mkdir -p /tmp/php-ext
+    [ -n "$PDO_SO" ]       && echo "extension=$PDO_SO"       > /tmp/php-ext/05-pdo.ini
+    [ -n "$PDO_MYSQL_SO" ] && echo "extension=$PDO_MYSQL_SO" > /tmp/php-ext/10-pdo_mysql.ini
+
+    # Try every conf.d directory that exists
+    for DIR in /etc/php82/conf.d /etc/php/8.2/fpm/conf.d /usr/local/etc/php/conf.d; do
+        if [ -d "$DIR" ]; then
+            [ -n "$PDO_SO" ]       && echo "extension=$PDO_SO"       > "$DIR/05-pdo.ini"
+            [ -n "$PDO_MYSQL_SO" ] && echo "extension=$PDO_MYSQL_SO" > "$DIR/10-pdo_mysql.ini"
+            echo "Wrote ini files to $DIR"
+        fi
+    done
+
+    # Final check
+    if php82 -m 2>/dev/null | grep -qi pdo_mysql; then
+        echo "✅ pdo_mysql now loaded"
+    else
+        echo "⚠️  pdo_mysql still not loaded — will try -d flag at runtime"
+        # Pass extra -d flags to php-fpm via env for runtime fallback
+        if [ -n "$PDO_MYSQL_SO" ]; then
+            export PHP_EXTRA_ARGS="-d extension=$PDO_MYSQL_SO"
+        fi
     fi
-}
-
-for d in $SCAN_DIRS $FALLBACK_DIRS; do
-    enable_ext "$d"
-done
-
-# Also write next to the loaded php.ini if we found it
-if [ -f "$PHP_INI" ]; then
-    INI_DIR=$(dirname "$PHP_INI")
-    enable_ext "$INI_DIR/conf.d"
-fi
-
-# ── 4. Confirm pdo_mysql is now loaded ────────────────────────────────────
-if php -m 2>/dev/null | grep -qi pdo_mysql; then
-    echo "✅ pdo_mysql loaded successfully"
 else
-    echo "⚠️  pdo_mysql not in -m output — trying direct extension path..."
-    # Last resort: if .so exists, add full path to php.ini itself
-    PDO_MYSQL_SO=$(find /nix /usr -name "pdo_mysql.so" 2>/dev/null | head -1)
-    if [ -n "$PDO_MYSQL_SO" ] && [ -f "$PHP_INI" ]; then
-        echo "extension=$PDO_MYSQL_SO" >> "$PHP_INI"
-        echo "  → Added $PDO_MYSQL_SO directly to $PHP_INI"
-    fi
+    echo "✅ pdo_mysql already loaded"
 fi
 
-echo "Loaded extensions: $(php -m 2>/dev/null | tr '\n' ' ')"
+# --- Substitute $PORT into nginx config ---
+export PORT="${PORT:-8080}"
+envsubst '$PORT' < /app/nginx.conf > /tmp/nginx.conf
 
-# ── 5. Start PHP-FPM ─────────────────────────────────────────────────────
-echo "Starting PHP-FPM..."
-php-fpm82 -F -R &
-FPM_PID=$!
+echo "Starting on port $PORT"
 
-# ── 6. Start Nginx ────────────────────────────────────────────────────────
-echo "Starting Nginx..."
-nginx -g "daemon off;"
+# --- Start PHP-FPM ---
+php-fpm82 --nodaemonize --fpm-config /etc/php82/php-fpm.conf &
+PHP_PID=$!
+sleep 1
+
+# --- Start Nginx ---
+nginx -c /tmp/nginx.conf -g "daemon off;" &
+NGINX_PID=$!
+
+trap "kill $PHP_PID $NGINX_PID 2>/dev/null; exit" SIGTERM SIGINT
+wait $NGINX_PID
