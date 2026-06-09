@@ -26,7 +26,7 @@ $method      = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $routes = [
 
     // ── Public pages ─────────────────────────────────────────────────────────
-    'GET /'                    => [HK_ROOT . '/pages/dashboard.php',    true,  false],
+    'GET /'                    => [HK_ROOT . '/pages/home.php',         false, false],
 
     // ── Auth ─────────────────────────────────────────────────────────────────
     'GET /auth/login'          => [HK_ROOT . '/auth/login.php',         false, false],
