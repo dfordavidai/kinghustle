@@ -117,5 +117,10 @@ if ($path === '/api/migrate') {
     dispatch(HK_ROOT . '/api/migrate.php', true);
 }
 
+// ── SEED (one-time data import — delete seed.php after use) ──────────────────
+if ($path === '/seed') {
+    dispatch(HK_ROOT . '/seed.php');
+}
+
 // ── 404 ──────────────────────────────────────────────────────────────────────
 Response::notFound();
