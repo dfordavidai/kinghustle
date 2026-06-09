@@ -233,13 +233,20 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .hc-save{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;flex-shrink:0;align-self:flex-start;margin-top:2px;}
 .hc-save.saved{background:var(--green-light);border-color:var(--green);}
 
-/* ── SWIPE CARD VIEW ── */
+/* ── SWIPE CARD VIEW — FULL SCREEN OVERLAY ── */
 .swipe-wrap{display:none;}
 .swipe-wrap.active{display:block;}
 .browse-wrap{display:block;}
 .browse-wrap.hidden{display:none;}
 
-.swipe-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);}
+#swipe-view{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:#fff;z-index:300;
+  display:flex;flex-direction:column;
+  max-width:480px;margin:0 auto;
+}
+
+.swipe-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;}
 .swipe-back{width:34px;height:34px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;text-decoration:none;flex-shrink:0;}
 .swipe-cat-info{flex:1;}
 .swipe-cat-icon{font-size:16px;display:inline-block;margin-right:6px;}
@@ -249,7 +256,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .sdot{width:20px;height:5px;border-radius:3px;background:var(--border);}
 .sdot.active{background:var(--green);width:28px;}
 
-.swipe-stage{position:relative;padding:12px 16px;min-height:340px;display:flex;align-items:center;justify-content:center;}
+.swipe-stage{position:relative;padding:12px 16px;flex:1;display:flex;align-items:center;justify-content:center;}
 .swipe-card{width:100%;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,#b5410a 0%,#8b2500 100%);position:relative;touch-action:none;user-select:none;}
 .swipe-card-inner{padding:18px 18px 16px;}
 .sc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:rgba(255,255,255,.9);font-family:'Bricolage Grotesque',sans-serif;margin-bottom:12px;}
@@ -263,7 +270,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .sc-income-label{font-size:9px;color:rgba(255,255,255,.5);font-weight:700;letter-spacing:.05em;margin-bottom:2px;}
 .sc-income-val{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:#fff;}
 
-.swipe-actions{display:flex;align-items:center;justify-content:space-around;padding:8px 16px 4px;}
+.swipe-actions{display:flex;align-items:center;justify-content:space-around;padding:8px 16px;flex-shrink:0;padding-bottom:calc(var(--bot) + 8px);background:#fff;}
 .sa-btn{width:56px;height:56px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:var(--sh2);}
 .sa-skip{background:#fff;border:2px solid #ffcccc;}
 .sa-detail{background:#fff;border:2px solid var(--border);}
@@ -386,7 +393,8 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 
 <!-- SWIPE CARD VIEW (when category selected + mode=swipe) -->
 <?php if ($cat && $mode === 'swipe' && !empty($hustles)): ?>
-<div id="swipe-view" style="margin-top:16px;">
+<script>document.body.style.overflow='hidden';</script>
+<div id="swipe-view">
   <div class="swipe-header">
     <a href="<?= filterUrl(['mode'=>'browse','cat'=>'','page'=>'']) ?>" class="swipe-back">←</a>
     <div class="swipe-cat-info">
@@ -454,6 +462,26 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <button class="sa-btn sa-skip" id="btn-skip" onclick="swipeAction('skip')">✕</button>
     <a href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($hustles[0]['slug'] ?? '') ?>" class="sa-btn sa-detail" id="btn-detail" style="font-size:18px;color:var(--text2);">📋</a>
     <button class="sa-btn sa-save" id="btn-save" onclick="swipeAction('save')">✏️</button>
+  </div>
+</div>
+
+<?php elseif ($cat && $mode === 'swipe' && empty($hustles)): ?>
+<script>document.body.style.overflow='hidden';</script>
+<div id="swipe-view">
+  <div class="swipe-header">
+    <a href="<?= filterUrl(['mode'=>'browse','cat'=>'','page'=>'']) ?>" class="swipe-back">←</a>
+    <div class="swipe-cat-info">
+      <div><span class="swipe-cat-icon"><?= $categories[$cat]['icon'] ?? '📦' ?></span><span class="swipe-cat-name"><?= htmlspecialchars($categories[$cat]['label'] ?? ucfirst($cat)) ?> hustles</span></div>
+      <div class="swipe-cat-sub">0 ideas</div>
+    </div>
+  </div>
+  <div class="swipe-stage">
+    <div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:48px;margin-bottom:12px">🎉</div>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:var(--text2);margin-bottom:8px">You've seen them all!</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:20px">Browse other categories or search the full list.</p>
+      <a href="<?= APP_URL ?>/hustles" style="display:inline-block;background:var(--green);color:#fff;border-radius:12px;padding:12px 24px;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;text-decoration:none;">Browse All →</a>
+    </div>
   </div>
 </div>
 
