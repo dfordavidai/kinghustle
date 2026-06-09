@@ -17,18 +17,7 @@ $user  = Auth::user();
 $isPro = Auth::isPro();
 
 // ── Income summary (last 30 days) ─────────────────────────────────────────────
-$income30 = DB::query(
-    'SELECT il.id, il.amount, il.logged_at, il.custom_name,
-            COALESCE(h.name, il.custom_name) as hustle_name, h.emoji
-     FROM income_log il
-     LEFT JOIN hustles h ON h.id = il.hustle_id
-     WHERE il.user_id = :uid AND il.logged_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-     ORDER BY il.logged_at DESC',
-    [':uid' => $user['id']]
-);
-$total30 = array_sum(array_column($income30, 'amount'));
-
-// Income last 7 days for sparkline
+// 7-day sparkline
 $income7 = DB::query(
     'SELECT DATE(logged_at) as day_date, DATE_FORMAT(MIN(logged_at), "%a") as day_label, SUM(amount) as day_total
      FROM income_log
@@ -36,6 +25,13 @@ $income7 = DB::query(
      GROUP BY DATE(logged_at) ORDER BY DATE(logged_at) ASC',
     [':uid' => $user['id']]
 );
+
+// Rolling 30-day total
+$total30 = (float)(DB::one(
+    'SELECT COALESCE(SUM(amount),0) as t FROM income_log
+     WHERE user_id = :uid AND logged_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)',
+    [':uid' => $user['id']]
+)['t'] ?? 0);
 
 // This month vs last month
 $thisMonth = (float)(DB::one(
@@ -53,48 +49,12 @@ $lastMonth = (float)(DB::one(
 
 $monthChange = $lastMonth > 0 ? round((($thisMonth - $lastMonth) / $lastMonth) * 100) : null;
 
-// ── Goals ─────────────────────────────────────────────────────────────────────
-$goals = DB::query(
-    'SELECT * FROM goals WHERE user_id = :uid ORDER BY is_completed ASC, created_at DESC LIMIT 6',
-    [':uid' => $user['id']]
-);
-$activeGoals    = array_filter($goals, fn($g) => !(bool)$g['is_completed']);
-$completedGoals = array_filter($goals, fn($g) => (bool)$g['is_completed']);
-
-// ── Saved Hustles ─────────────────────────────────────────────────────────────
-$savedHustles = DB::query(
-    'SELECT h.id, h.name, h.slug, h.emoji, h.category, h.income_min, h.income_max,
-            h.income_period, h.difficulty, sh.created_at as saved_at
-     FROM saved_hustles sh
-     JOIN hustles h ON h.id = sh.hustle_id
-     WHERE sh.user_id = :uid
-     ORDER BY sh.created_at DESC LIMIT 8',
-    [':uid' => $user['id']]
-);
-
 // ── Referral ──────────────────────────────────────────────────────────────────
 $refCount = (int)(DB::one(
     'SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = :id',
     [':id' => $user['id']]
 )['cnt'] ?? 0);
 $shareUrl = APP_URL . '/auth/register?ref=' . urlencode($user['ref_code']);
-
-// ── Top income sources ────────────────────────────────────────────────────────
-$topSources = DB::query(
-    'SELECT COALESCE(h.name, il.custom_name, "Other") as source_name,
-            COALESCE(h.emoji, "💰") as emoji,
-            SUM(il.amount) as total,
-            COUNT(*) as entries
-     FROM income_log il
-     LEFT JOIN hustles h ON h.id = il.hustle_id
-     WHERE il.user_id = :uid AND il.logged_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-     GROUP BY source_name, emoji
-     ORDER BY total DESC LIMIT 5',
-    [':uid' => $user['id']]
-);
-
-// ── Recent income entries (last 5) ────────────────────────────────────────────
-$recentIncome = array_slice($income30, 0, 5);
 
 // ── All hustles for browsing (limited) ────────────────────────────────────────
 $allHustles = DB::query(
@@ -382,12 +342,8 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
       <div class="hstat-l">Last 30 days</div>
     </div>
     <div class="hstat">
-      <div class="hstat-n"><?= count($income30) ?></div>
-      <div class="hstat-l">Entries</div>
-    </div>
-    <div class="hstat">
-      <div class="hstat-n"><?= count($activeGoals) ?></div>
-      <div class="hstat-l">Active goals</div>
+      <div class="hstat-n"><?= $refCount ?></div>
+      <div class="hstat-l">Referrals</div>
     </div>
   </div>
 
@@ -439,145 +395,6 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <div class="qa-label"><?= $isPro ? 'Pro Active' : 'Go Pro' ?></div>
   </a>
 </div>
-
-<!-- ═══════════════════════════════════
-     GOALS
-═══════════════════════════════════ -->
-<div class="sec-head">
-  <div class="sec-title">🎯 My Goals</div>
-  <button class="sec-all" onclick="openGoalModal()">+ Add goal</button>
-</div>
-
-<div style="padding:0 16px;">
-  <?php if (empty($goals)): ?>
-    <div class="empty-state">
-      <div class="ei">🎯</div>
-      No goals yet. <a href="#" onclick="openGoalModal();return false;">Set your first goal →</a>
-    </div>
-  <?php else: ?>
-    <?php foreach ($activeGoals as $goal):
-      $pct = $goal['target_amount'] > 0 ? min(100, round(($goal['current_amount'] / $goal['target_amount']) * 100)) : 0;
-    ?>
-      <div class="goal-card" id="goal-<?= (int)$goal['id'] ?>">
-        <div class="goal-header">
-          <div class="goal-title-row">
-            <span style="font-size:22px;"><?= htmlspecialchars($goal['emoji']) ?></span>
-            <div>
-              <div class="goal-title"><?= htmlspecialchars($goal['title']) ?></div>
-              <?php if ($goal['deadline']): ?>
-                <div class="goal-deadline">📅 <?= date('d M Y', strtotime($goal['deadline'])) ?></div>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="goal-pct"><?= $pct ?>%</div>
-        </div>
-        <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:<?= $pct ?>%"></div></div>
-        <div class="goal-amounts">
-          <span>Saved: <strong><?= fmt((float)$goal['current_amount']) ?></strong></span>
-          <span>Target: <strong><?= fmt((float)$goal['target_amount']) ?></strong></span>
-        </div>
-        <div class="goal-actions">
-          <button onclick="addToGoal(<?= (int)$goal['id'] ?>,'<?= htmlspecialchars(addslashes($goal['title'])) ?>')" style="background:var(--green-light);color:var(--green3);">+ Add funds</button>
-          <button onclick="markGoalDone(<?= (int)$goal['id'] ?>)" style="background:var(--surface);color:var(--text3);">✓ Done</button>
-          <button onclick="deleteGoal(<?= (int)$goal['id'] ?>)" style="background:var(--red-light);color:var(--red);flex:0;padding:7px 10px;">🗑</button>
-        </div>
-      </div>
-    <?php endforeach; ?>
-    <?php foreach ($completedGoals as $goal): ?>
-      <div class="goal-card done">
-        <div class="goal-header">
-          <div class="goal-title-row">
-            <span style="font-size:22px;">✅</span>
-            <div>
-              <div class="goal-title"><?= htmlspecialchars($goal['title']) ?></div>
-              <div class="goal-deadline">Completed <?= date('d M Y', strtotime($goal['completed_at'])) ?></div>
-            </div>
-          </div>
-          <div class="goal-pct done">100%</div>
-        </div>
-        <div class="goal-bar-bg"><div class="goal-bar-fill done" style="width:100%"></div></div>
-        <div class="goal-amounts"><span>Target: <strong><?= fmt((float)$goal['target_amount']) ?></strong></span></div>
-      </div>
-    <?php endforeach; ?>
-  <?php endif; ?>
-</div>
-
-<!-- ═══════════════════════════════════
-     RECENT INCOME
-═══════════════════════════════════ -->
-<div class="sec-head">
-  <div class="sec-title">💸 Recent Income</div>
-  <button class="sec-all" onclick="openLogModal()">+ Log</button>
-</div>
-
-<?php if (empty($recentIncome)): ?>
-  <div class="empty-state">
-    <div class="ei">💸</div>
-    No income logged yet. <a href="#" onclick="openLogModal();return false;">Log your first ₦ →</a>
-  </div>
-<?php else: ?>
-  <div style="border:1.5px solid var(--border);border-radius:var(--r);margin:0 16px;overflow:hidden;" id="income-list">
-    <?php foreach ($recentIncome as $entry): ?>
-      <div class="income-row" id="income-<?= (int)$entry['id'] ?>">
-        <div class="income-emoji"><?= htmlspecialchars($entry['emoji'] ?? '💰') ?></div>
-        <div class="income-info">
-          <div class="income-name"><?= htmlspecialchars($entry['hustle_name'] ?? 'Custom Income') ?></div>
-          <div class="income-date"><?= date('d M Y', strtotime($entry['logged_at'])) ?></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="income-amount">+<?= fmt((float)$entry['amount']) ?></div>
-          <button onclick="deleteEntry(<?= (int)$entry['id'] ?>)" style="background:none;border:none;font-size:14px;color:var(--text3);cursor:pointer;padding:4px;">🗑</button>
-        </div>
-      </div>
-    <?php endforeach; ?>
-  </div>
-<?php endif; ?>
-
-<!-- ═══════════════════════════════════
-     TOP SOURCES
-═══════════════════════════════════ -->
-<?php if (!empty($topSources)): ?>
-  <div class="sec-head">
-    <div class="sec-title">📊 Top Sources (30d)</div>
-  </div>
-  <div class="stat-grid">
-    <?php foreach (array_slice($topSources, 0, 4) as $src): ?>
-      <div class="stat-card">
-        <div class="sc-label"><?= htmlspecialchars($src['emoji']) ?> <?= htmlspecialchars($src['source_name']) ?></div>
-        <div class="sc-val"><?= fmt((float)$src['total']) ?></div>
-        <div class="sc-sub"><?= (int)$src['entries'] ?> entr<?= $src['entries'] == 1 ? 'y' : 'ies' ?></div>
-      </div>
-    <?php endforeach; ?>
-  </div>
-<?php endif; ?>
-
-<!-- ═══════════════════════════════════
-     SAVED HUSTLES
-═══════════════════════════════════ -->
-<div class="sec-head">
-  <div class="sec-title">🔖 Saved Hustles</div>
-  <a href="<?= APP_URL ?>/hustles" class="sec-all">Browse all →</a>
-</div>
-
-<?php if (empty($savedHustles)): ?>
-  <div class="empty-state">
-    <div class="ei">🔖</div>
-    No saved hustles. <a href="<?= APP_URL ?>/">Explore hustles →</a>
-  </div>
-<?php else: ?>
-  <div class="hustle-scroll">
-    <?php foreach ($savedHustles as $h): ?>
-      <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
-        <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
-        <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
-        <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
-        <div class="hc-tags">
-          <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
-        </div>
-      </a>
-    <?php endforeach; ?>
-  </div>
-<?php endif; ?>
 
 <!-- ═══════════════════════════════════
      BROWSE CATEGORIES
