@@ -1,10 +1,22 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo", "php82Extensions.pdo_mysql", "php82Extensions.mysqli", "php82Extensions.mbstring", "php82Extensions.json", "php82Extensions.curl", "php82Extensions.openssl", "nginx"]
+nixPkgs = [
+  "php82",
+  "php82Extensions.pdo",
+  "php82Extensions.pdo_mysql",
+  "php82Extensions.mysqli",
+  "php82Extensions.mbstring",
+  "php82Extensions.json",
+  "php82Extensions.curl",
+  "php82Extensions.openssl",
+  "php82Extensions.session",
+  "php82Extensions.tokenizer",
+  "nginx"
+]
 
 [phases.build]
 cmds = [
-  "php82 -r \"echo extension_loaded('pdo_mysql') ? 'pdo_mysql OK' : 'pdo_mysql MISSING'; echo PHP_EOL;\""
+  "php82 -r \"echo 'pdo_mysql: ' . (extension_loaded('pdo_mysql') ? 'OK' : 'MISSING') . PHP_EOL;\""
 ]
 
 [start]
-cmd = "bash start.sh"
+cmd = "bash /app/start.sh"
