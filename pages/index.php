@@ -1,4 +1,5 @@
 <?php
+file_put_contents('/tmp/debug.log', date('H:i:s').' PATH=['.$_SERVER['REQUEST_URI'].'] SCRIPT=['.$_SERVER['SCRIPT_NAME'].'] METHOD='.$_SERVER['REQUEST_METHOD']."\n", FILE_APPEND);
 /**
  * HustleKingdom — Front Controller
  * Every request comes here. We resolve the route, check auth, dispatch.
