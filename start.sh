@@ -8,14 +8,13 @@ php -v | head -1
 mkdir -p /tmp/sessions
 chmod 777 /tmp/sessions
 
-# Ensure nginx can write its pid and temp files
-mkdir -p /tmp/nginx
-chmod 777 /tmp/nginx
+# Ensure nginx temp dirs exist
+mkdir -p /tmp/nginx_client_body /tmp/nginx_proxy /tmp/nginx_fastcgi /tmp/nginx_uwsgi /tmp/nginx_scgi
+chmod 777 /tmp/nginx_client_body /tmp/nginx_proxy /tmp/nginx_fastcgi /tmp/nginx_uwsgi /tmp/nginx_scgi
 
 export PORT="${PORT:-8080}"
 
-# With nixpacks, nginx.conf lives at /app/nginx.conf (not copied to /etc/nginx/)
-# Substitute $PORT and write to the location nginx expects
+# Substitute $PORT from /app/nginx.conf → /tmp/nginx.conf
 envsubst '$PORT' < /app/nginx.conf > /tmp/nginx.conf
 
 echo "Starting PHP-FPM..."
