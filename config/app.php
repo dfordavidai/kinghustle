@@ -22,27 +22,30 @@ if (file_exists($envFile)) {
 }
 
 // ── APP ──────────────────────────────────────────────────────────────────────
-define('APP_NAME',    $_ENV['APP_NAME']    ?? 'Hustle Kingdom');
-define('APP_URL',     rtrim($_ENV['APP_URL'] ?? 'http://localhost', '/'));
-define('APP_ENV',     $_ENV['APP_ENV']     ?? 'production'); // production | development
-define('APP_DEBUG',   ($_ENV['APP_DEBUG']  ?? 'false') === 'true');
+function _env(string $key, string $default = ''): string {
+    return $_ENV[$key] ?? $_SERVER[$key] ?? (getenv($key) ?: $default);
+}
+define('APP_NAME',    _env('APP_NAME',  'Hustle Kingdom'));
+define('APP_URL',     rtrim(_env('APP_URL', 'http://localhost'), '/'));
+define('APP_ENV',     _env('APP_ENV',  'production'));
+define('APP_DEBUG',   _env('APP_DEBUG', 'false') === 'true');
 
 // ── DATABASE ─────────────────────────────────────────────────────────────────
 // Railway MySQL plugin injects MYSQL_URL = mysql://user:pass@host:port/dbname
 // Fall back to individual DB_* vars for other hosts / local dev
-if (!empty($_ENV['MYSQL_URL'])) {
-    $dsn = parse_url($_ENV['MYSQL_URL']);
+if (!empty(_env('MYSQL_URL'))) {
+    $dsn = parse_url(_env('MYSQL_URL'));
     define('DB_HOST', $dsn['host']                         ?? 'localhost');
     define('DB_PORT', (int)($dsn['port']                   ?? 3306));
     define('DB_NAME', ltrim($dsn['path'] ?? 'hustlekingdom', '/'));
     define('DB_USER', $dsn['user']                         ?? 'root');
     define('DB_PASS', isset($dsn['pass']) ? urldecode($dsn['pass']) : '');
 } else {
-    define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
-    define('DB_PORT', (int)($_ENV['DB_PORT'] ?? 3306));
-    define('DB_NAME', $_ENV['DB_NAME'] ?? 'hustlekingdom');
-    define('DB_USER', $_ENV['DB_USER'] ?? 'root');
-    define('DB_PASS', $_ENV['DB_PASS'] ?? '');
+    define('DB_HOST', _env('DB_HOST', 'localhost'));
+    define('DB_PORT', (int)_env('DB_PORT', '3306'));
+    define('DB_NAME', _env('DB_NAME', 'hustlekingdom'));
+    define('DB_USER', _env('DB_USER', 'root'));
+    define('DB_PASS', _env('DB_PASS', ''));
 }
 define('DB_CHARSET',  'utf8mb4');
 
@@ -55,9 +58,9 @@ define('CSRF_TOKEN_LENGTH', 32);
 define('PASSWORD_MIN_LEN',  8);
 
 // ── PAYSTACK ─────────────────────────────────────────────────────────────────
-define('PAYSTACK_SECRET_KEY',  $_ENV['PAYSTACK_SECRET_KEY']  ?? '');
-define('PAYSTACK_PUBLIC_KEY',  $_ENV['PAYSTACK_PUBLIC_KEY']  ?? '');
-define('PAYSTACK_WEBHOOK_SECRET', $_ENV['PAYSTACK_WEBHOOK_SECRET'] ?? '');
+define('PAYSTACK_SECRET_KEY',     _env('PAYSTACK_SECRET_KEY'));
+define('PAYSTACK_PUBLIC_KEY',     _env('PAYSTACK_PUBLIC_KEY'));
+define('PAYSTACK_WEBHOOK_SECRET', _env('PAYSTACK_WEBHOOK_SECRET'));
 
 // ── PLANS ────────────────────────────────────────────────────────────────────
 define('PRO_MONTHLY_AMOUNT',  250000); // Paystack uses kobo — ₦2,500
