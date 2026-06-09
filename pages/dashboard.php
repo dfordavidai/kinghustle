@@ -119,8 +119,8 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .bnav.active{color:var(--green);}
 .bni{font-size:18px;}
 .bnl{font-size:8.5px;font-weight:700;font-family:'Bricolage Grotesque',sans-serif;}
-.bnav-log{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 1px;cursor:pointer;border:none;background:transparent;text-decoration:none;}
-.bnav-log-icon{width:40px;height:40px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;margin-top:-12px;box-shadow:0 4px 14px rgba(22,160,90,.4);}
+.bnav-ctr{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 1px;cursor:pointer;border:none;background:transparent;text-decoration:none;}
+.bnav-ctr-icon{width:40px;height:40px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;margin-top:-12px;box-shadow:0 4px 14px rgba(22,160,90,.4);}
 
 /* ── HERO ── */
 .hero{background:linear-gradient(140deg,#0d6e3c 0%,#16a05a 55%,#20c870 100%);padding:22px 18px 24px;position:relative;overflow:hidden;}
@@ -315,6 +315,16 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 <div class="hero">
   <div class="hero-greeting"><?= htmlspecialchars($greeting) ?></div>
   <div class="hero-name"><?= htmlspecialchars($firstName) ?> <span><?= htmlspecialchars($user['avatar_emoji']) ?></span></div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <span style="font-size:11px;color:rgba(255,255,255,.65);"><?= htmlspecialchars($user['email']) ?></span>
+    <?php if ($isPro): ?>
+      <span style="background:rgba(200,150,10,.25);border:1px solid rgba(200,150,10,.5);color:#ffe27a;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:'Bricolage Grotesque',sans-serif;">⭐ PRO</span>
+    <?php else: ?>
+      <a href="<?= APP_URL ?>/upgrade" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:'Bricolage Grotesque',sans-serif;text-decoration:none;">Upgrade →</a>
+    <?php endif; ?>
+    <a href="<?= APP_URL ?>/auth/logout" style="background:rgba(255,80,80,.2);border:1px solid rgba(255,100,100,.35);color:#ffb3b3;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:'Bricolage Grotesque',sans-serif;text-decoration:none;">Log out</a>
+  </div>
 
   <?php if ($user['streak_count'] > 0): ?>
     <div class="streak-pill">🔥 <?= (int)$user['streak_count'] ?> day streak — keep it up!</div>
@@ -556,26 +566,6 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
   </div>
 </div>
 
-<!-- ═══════════════════════════════════
-     ACCOUNT
-═══════════════════════════════════ -->
-<div class="sec-head" style="margin-top:24px;">
-  <div class="sec-title">👤 Account</div>
-  <a href="<?= APP_URL ?>/auth/logout" class="sec-all" style="color:var(--red);">Log out</a>
-</div>
-<div class="account-grid">
-  <div class="acc-card">
-    <div class="acc-label">Name</div>
-    <div class="acc-val"><?= htmlspecialchars($user['name']) ?></div>
-    <div class="acc-sub"><?= htmlspecialchars($user['email']) ?></div>
-  </div>
-  <div class="acc-card">
-    <div class="acc-label">Plan</div>
-    <div class="acc-val" style="color:<?= $isPro ? 'var(--gold)' : 'var(--text2)' ?>"><?= $isPro ? '⭐ Pro' : 'Free' ?></div>
-    <div class="acc-sub"><?= $isPro ? 'Expires ' . date('d M Y', strtotime($user['pro_expires_at'])) : 'Limited access' ?></div>
-  </div>
-</div>
-
 <div style="height:20px;"></div>
 
 <!-- ═══════════════════════════════════
@@ -587,18 +577,18 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <div class="bnl">Home</div>
   </a>
   <a href="<?= APP_URL ?>/hustles" class="bnav">
-    <div class="bni">🔥</div>
-    <div class="bnl">Hustles</div>
-  </a>
-  <button class="bnav-log" onclick="openLogModal()">
-    <div class="bnav-log-icon">+</div>
-    <div class="bnl" style="font-size:8.5px;font-weight:700;font-family:'Bricolage Grotesque',sans-serif;color:var(--text3);">Log</div>
-  </button>
-  <a href="<?= APP_URL ?>/ideas" class="bnav">
     <div class="bni">💡</div>
-    <div class="bnl">Ideas</div>
+    <div class="bnl">Discover</div>
   </a>
-  <a href="<?= APP_URL ?>/ai" class="bnav">
+  <a href="<?= APP_URL ?>/execute" class="bnav-ctr">
+    <div class="bnav-ctr-icon">▶</div>
+    <div class="bnl" style="font-size:8.5px;font-weight:700;font-family:'Bricolage Grotesque',sans-serif;color:var(--text3);">Execute</div>
+  </a>
+  <a href="<?= APP_URL ?>/location" class="bnav">
+    <div class="bni">📍</div>
+    <div class="bnl">Location</div>
+  </a>
+  <a href="<?= APP_URL ?>/ai" class="bnav active">
     <div class="bni">🤖</div>
     <div class="bnl">AI</div>
   </a>
