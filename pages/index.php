@@ -40,19 +40,17 @@ $routes = [
     'POST /auth/verify'        => [HK_ROOT . '/auth/verify.php',        false, false],
 
     // ── Protected pages ───────────────────────────────────────────────────────
-    // ── Public inner pages ──────────────────────────────────────────────────────
-    'GET /hustles'             => [HK_ROOT . '/pages/hustles.php',      false, false],
-    'GET /ideas'               => [HK_ROOT . '/pages/ideas.php',        false, false],
-    'GET /tools'               => [HK_ROOT . '/pages/tools.php',        false, false],
-
-    // ── Protected pages ──────────────────────────────────────────────────────────
     'GET /dashboard'           => [HK_ROOT . '/pages/dashboard.php',    true,  false],
-    'GET /ai'                  => [HK_ROOT . '/pages/ai.php',           true,  false],
-    'POST /ai'                 => [HK_ROOT . '/pages/ai.php',           true,  false],
-    'GET /execute'             => [HK_ROOT . '/pages/execute.php',      true,  false],
     'GET /upgrade'             => [HK_ROOT . '/pages/upgrade.php',      true,  false],
     'POST /upgrade'            => [HK_ROOT . '/pages/upgrade.php',      true,  false],
     'GET /payment/callback'    => [HK_ROOT . '/pages/payment-callback.php', true, false],
+
+    // ── Feature pages ─────────────────────────────────────────────────────────
+    'GET /hustles'             => [HK_ROOT . '/pages/hustles.php',      false, false],
+    'GET /execute'             => [HK_ROOT . '/pages/execute.php',      true,  false],
+    'GET /ideas'               => [HK_ROOT . '/pages/ideas.php',        false, false],
+    'GET /tools'               => [HK_ROOT . '/pages/tools.php',        false, false],
+    'GET /ai'                  => [HK_ROOT . '/pages/ai.php',           true,  false],
 
     // ── API endpoints ────────────────────────────────────────────────────────
     'GET /api/profile'         => [HK_ROOT . '/api/profile.php',        true,  false],
