@@ -24,7 +24,7 @@ class DB {
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                     PDO::ATTR_PERSISTENT         => false,
-                    PDO::MYSQL_ATTR_FOUND_ROWS   => true,
+                    PDO::MYSQL_ATTR_FOUND_ROWS   => defined('PDO::MYSQL_ATTR_FOUND_ROWS') ? true : false,
                 ]);
             } catch (PDOException $e) {
                 if (APP_DEBUG) {
