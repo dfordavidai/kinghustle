@@ -13,27 +13,11 @@ require_once HK_ROOT . '/core/Middleware.php';
 Auth::start();
 
 // ── PARSE URL ────────────────────────────────────────────────────────────────
-$requestUri  = $_SERVER['REQUEST_URI'] ?? '/';
-$scriptName  = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
-$basePath    = rtrim(dirname($scriptName), '/');
-$path        = '/' . ltrim(substr(urldecode(parse_url($requestUri, PHP_URL_PATH)), strlen($basePath)), '/');
-$path        = rtrim($path, '/') ?: '/';
-$method      = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-
-// ── DEBUG: dump all server vars so we can see what Railway passes ─────────────
-if (isset($_GET['_debug'])) {
-    header('Content-Type: text/plain');
-    echo "REQUEST_URI  = " . ($_SERVER['REQUEST_URI']   ?? 'N/A') . "\n";
-    echo "SCRIPT_NAME  = " . ($_SERVER['SCRIPT_NAME']   ?? 'N/A') . "\n";
-    echo "PATH_INFO    = " . ($_SERVER['PATH_INFO']      ?? 'N/A') . "\n";
-    echo "QUERY_STRING = " . ($_SERVER['QUERY_STRING']   ?? 'N/A') . "\n";
-    echo "basePath     = $basePath\n";
-    echo "path         = $path\n";
-    echo "method       = $method\n";
-    echo "\n--- All SERVER vars ---\n";
-    foreach ($_SERVER as $k => $v) echo "$k = $v\n";
-    exit;
-}
+// Use REQUEST_URI directly — don't touch SCRIPT_NAME at all.
+// Strip query string, decode, normalise trailing slash.
+$rawUri = $_SERVER['REQUEST_URI'] ?? '/';
+$path   = rtrim(urldecode(strtok($rawUri, '?')), '/') ?: '/';
+$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 // ── DISPATCHER ───────────────────────────────────────────────────────────────
 function dispatch(string $file, bool $requiresAuth, bool $requiresPro): never {
@@ -56,7 +40,7 @@ if (preg_match('#^/hustle/([a-z0-9\-]+)$#', $path, $m)) {
     dispatch(HK_ROOT . '/pages/hustle-detail.php', false, false);
 }
 
-// ── ALL ROUTES AS DIRECT DISPATCH (same pattern as /location) ────────────────
+// ── STATIC ROUTES ────────────────────────────────────────────────────────────
 if ($path === '/' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/home.php', false, false);
 
@@ -126,12 +110,5 @@ if ($path === '/api/webhook/paystack' && $method === 'POST')
 if ($path === '/api/migrate' && $method === 'POST')
     dispatch(HK_ROOT . '/api/migrate.php', true, false);
 
-// Nothing matched — show debug info instead of plain 404
-http_response_code(404);
-header('Content-Type: text/plain');
-echo "404 — No route matched\n\n";
-echo "REQUEST_URI = " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
-echo "SCRIPT_NAME = " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
-echo "basePath    = $basePath\n";
-echo "path        = $path\n";
-echo "method      = $method\n";
+// Nothing matched
+Response::notFound();
