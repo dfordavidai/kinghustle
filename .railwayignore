@@ -1,0 +1,5 @@
+config/.env
+config/.env.example
+logs/*
+!logs/.htaccess
+!logs/index.php
