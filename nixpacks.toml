@@ -1,21 +1,21 @@
 [phases.setup]
 nixPkgs = [
-  "php82",
-  "php82Extensions.pdo",
-  "php82Extensions.pdo_mysql",
-  "php82Extensions.mysqli",
-  "php82Extensions.mbstring",
-  "php82Extensions.json",
-  "php82Extensions.curl",
-  "php82Extensions.openssl",
-  "php82Extensions.session",
-  "php82Extensions.tokenizer",
+  "php84",
+  "php84Extensions.pdo",
+  "php84Extensions.pdo_mysql",
+  "php84Extensions.mysqli",
+  "php84Extensions.mbstring",
+  "php84Extensions.json",
+  "php84Extensions.curl",
+  "php84Extensions.openssl",
+  "php84Extensions.session",
+  "php84Extensions.tokenizer",
   "nginx"
 ]
 
 [phases.build]
 cmds = [
-  "php82 -r \"echo 'pdo_mysql: ' . (extension_loaded('pdo_mysql') ? 'OK' : 'MISSING') . PHP_EOL;\""
+  "php -r \"echo 'pdo_mysql: ' . (extension_loaded('pdo_mysql') ? 'OK ✅' : 'MISSING ❌') . PHP_EOL;\""
 ]
 
 [start]
