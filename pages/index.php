@@ -13,11 +13,12 @@ require_once HK_ROOT . '/core/Middleware.php';
 Auth::start();
 
 // ── PARSE URL ────────────────────────────────────────────────────────────────
-// Use REQUEST_URI directly — don't touch SCRIPT_NAME at all.
-// Strip query string, decode, normalise trailing slash.
-$rawUri = $_SERVER['REQUEST_URI'] ?? '/';
-$path   = rtrim(urldecode(strtok($rawUri, '?')), '/') ?: '/';
-$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$requestUri  = $_SERVER['REQUEST_URI'] ?? '/';
+$scriptName  = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+$basePath    = rtrim(dirname($scriptName), '/');
+$path        = '/' . ltrim(substr(urldecode(parse_url($requestUri, PHP_URL_PATH)), strlen($basePath)), '/');
+$path        = rtrim($path, '/') ?: '/';
+$method      = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 // ── DISPATCHER ───────────────────────────────────────────────────────────────
 function dispatch(string $file, bool $requiresAuth, bool $requiresPro): never {
@@ -40,75 +41,50 @@ if (preg_match('#^/hustle/([a-z0-9\-]+)$#', $path, $m)) {
     dispatch(HK_ROOT . '/pages/hustle-detail.php', false, false);
 }
 
-// ── STATIC ROUTES ────────────────────────────────────────────────────────────
-if ($path === '/' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/home.php', false, false);
+// ── ROUTE TABLE ──────────────────────────────────────────────────────────────
+$routes = [
+    'GET /'                      => [HK_ROOT . '/pages/home.php',             false, false],
+    'GET /auth/login'            => [HK_ROOT . '/auth/login.php',             false, false],
+    'POST /auth/login'           => [HK_ROOT . '/auth/login.php',             false, false],
+    'GET /auth/register'         => [HK_ROOT . '/auth/register.php',          false, false],
+    'POST /auth/register'        => [HK_ROOT . '/auth/register.php',          false, false],
+    'GET /auth/logout'           => [HK_ROOT . '/auth/logout.php',            true,  false],
+    'GET /auth/forgot'           => [HK_ROOT . '/auth/forgot.php',            false, false],
+    'POST /auth/forgot'          => [HK_ROOT . '/auth/forgot.php',            false, false],
+    'GET /auth/verify'           => [HK_ROOT . '/auth/verify.php',            false, false],
+    'POST /auth/verify'          => [HK_ROOT . '/auth/verify.php',            false, false],
+    'GET /dashboard'             => [HK_ROOT . '/pages/dashboard.php',        true,  false],
+    'GET /upgrade'               => [HK_ROOT . '/pages/upgrade.php',          true,  false],
+    'POST /upgrade'              => [HK_ROOT . '/pages/upgrade.php',          true,  false],
+    'GET /payment/callback'      => [HK_ROOT . '/pages/payment-callback.php', true,  false],
+    'GET /hustles'               => [HK_ROOT . '/pages/hustles.php',          false, false],
+    'GET /execute'               => [HK_ROOT . '/pages/execute.php',          true,  false],
+    'GET /ideas'                 => [HK_ROOT . '/pages/ideas.php',            false, false],
+    'GET /tools'                 => [HK_ROOT . '/pages/tools.php',            false, false],
+    'GET /ai'                    => [HK_ROOT . '/pages/ai.php',               true,  false],
+    'GET /api/profile'           => [HK_ROOT . '/api/profile.php',            true,  false],
+    'PUT /api/profile'           => [HK_ROOT . '/api/profile.php',            true,  false],
+    'GET /api/income'            => [HK_ROOT . '/api/income.php',             true,  false],
+    'POST /api/income'           => [HK_ROOT . '/api/income.php',             true,  false],
+    'DELETE /api/income'         => [HK_ROOT . '/api/income.php',             true,  false],
+    'GET /api/goals'             => [HK_ROOT . '/api/goals.php',              true,  false],
+    'POST /api/goals'            => [HK_ROOT . '/api/goals.php',              true,  false],
+    'PUT /api/goals'             => [HK_ROOT . '/api/goals.php',              true,  false],
+    'DELETE /api/goals'          => [HK_ROOT . '/api/goals.php',              true,  false],
+    'GET /api/hustles'           => [HK_ROOT . '/api/hustles.php',            false, false],
+    'GET /api/saved'             => [HK_ROOT . '/api/saved.php',              true,  false],
+    'POST /api/saved'            => [HK_ROOT . '/api/saved.php',              true,  false],
+    'GET /api/referral'          => [HK_ROOT . '/api/referral.php',           true,  false],
+    'GET /api/subscription'      => [HK_ROOT . '/api/subscription.php',       true,  false],
+    'POST /api/webhook/paystack' => [HK_ROOT . '/api/subscription.php',       false, false],
+    'POST /api/migrate'          => [HK_ROOT . '/api/migrate.php',            true,  false],
+];
 
-if ($path === '/auth/login')
-    dispatch(HK_ROOT . '/auth/login.php', false, false);
-
-if ($path === '/auth/register')
-    dispatch(HK_ROOT . '/auth/register.php', false, false);
-
-if ($path === '/auth/logout' && $method === 'GET')
-    dispatch(HK_ROOT . '/auth/logout.php', true, false);
-
-if ($path === '/auth/forgot')
-    dispatch(HK_ROOT . '/auth/forgot.php', false, false);
-
-if ($path === '/auth/verify')
-    dispatch(HK_ROOT . '/auth/verify.php', false, false);
-
-if ($path === '/dashboard' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/dashboard.php', true, false);
-
-if ($path === '/upgrade')
-    dispatch(HK_ROOT . '/pages/upgrade.php', true, false);
-
-if ($path === '/payment/callback' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/payment-callback.php', true, false);
-
-if ($path === '/hustles' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/hustles.php', false, false);
-
-if ($path === '/execute' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/execute.php', true, false);
-
-if ($path === '/ideas' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/ideas.php', false, false);
-
-if ($path === '/tools' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/tools.php', false, false);
-
-if ($path === '/ai' && $method === 'GET')
-    dispatch(HK_ROOT . '/pages/ai.php', true, false);
-
-if ($path === '/api/profile')
-    dispatch(HK_ROOT . '/api/profile.php', true, false);
-
-if ($path === '/api/income')
-    dispatch(HK_ROOT . '/api/income.php', true, false);
-
-if ($path === '/api/goals')
-    dispatch(HK_ROOT . '/api/goals.php', true, false);
-
-if ($path === '/api/hustles' && $method === 'GET')
-    dispatch(HK_ROOT . '/api/hustles.php', false, false);
-
-if ($path === '/api/saved')
-    dispatch(HK_ROOT . '/api/saved.php', true, false);
-
-if ($path === '/api/referral' && $method === 'GET')
-    dispatch(HK_ROOT . '/api/referral.php', true, false);
-
-if ($path === '/api/subscription')
-    dispatch(HK_ROOT . '/api/subscription.php', true, false);
-
-if ($path === '/api/webhook/paystack' && $method === 'POST')
-    dispatch(HK_ROOT . '/api/subscription.php', false, false);
-
-if ($path === '/api/migrate' && $method === 'POST')
-    dispatch(HK_ROOT . '/api/migrate.php', true, false);
+$routeKey = "$method $path";
+if (isset($routes[$routeKey])) {
+    [$file, $auth, $pro] = $routes[$routeKey];
+    dispatch($file, $auth, $pro);
+}
 
 // Nothing matched
 Response::notFound();
