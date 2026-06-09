@@ -1,7 +1,6 @@
 <?php
 /**
  * HustleKingdom — Front Controller
- * Every request comes here. We resolve the route, check auth, dispatch.
  */
 
 define('HK_ROOT', __DIR__);
@@ -21,6 +20,21 @@ $path        = '/' . ltrim(substr(urldecode(parse_url($requestUri, PHP_URL_PATH)
 $path        = rtrim($path, '/') ?: '/';
 $method      = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
+// ── DEBUG: dump all server vars so we can see what Railway passes ─────────────
+if (isset($_GET['_debug'])) {
+    header('Content-Type: text/plain');
+    echo "REQUEST_URI  = " . ($_SERVER['REQUEST_URI']   ?? 'N/A') . "\n";
+    echo "SCRIPT_NAME  = " . ($_SERVER['SCRIPT_NAME']   ?? 'N/A') . "\n";
+    echo "PATH_INFO    = " . ($_SERVER['PATH_INFO']      ?? 'N/A') . "\n";
+    echo "QUERY_STRING = " . ($_SERVER['QUERY_STRING']   ?? 'N/A') . "\n";
+    echo "basePath     = $basePath\n";
+    echo "path         = $path\n";
+    echo "method       = $method\n";
+    echo "\n--- All SERVER vars ---\n";
+    foreach ($_SERVER as $k => $v) echo "$k = $v\n";
+    exit;
+}
+
 // ── DISPATCHER ───────────────────────────────────────────────────────────────
 function dispatch(string $file, bool $requiresAuth, bool $requiresPro): never {
     if ($requiresAuth)  Auth::guard();
@@ -30,26 +44,22 @@ function dispatch(string $file, bool $requiresAuth, bool $requiresPro): never {
     exit;
 }
 
-// ── DYNAMIC ROUTES (checked first, same pattern as /location) ────────────────
-
-// /location/{state} and /location/{state}/{city}
+// ── DYNAMIC ROUTES ───────────────────────────────────────────────────────────
 if (preg_match('#^/location(?:/([^/]+))?(?:/([^/]+))?$#', $path, $m)) {
     $_GET['state'] = $m[1] ?? '';
     $_GET['city']  = $m[2] ?? '';
     dispatch(HK_ROOT . '/pages/location.php', false, false);
 }
 
-// /hustle/{slug}
 if (preg_match('#^/hustle/([a-z0-9\-]+)$#', $path, $m)) {
     $_GET['slug'] = $m[1];
     dispatch(HK_ROOT . '/pages/hustle-detail.php', false, false);
 }
 
-// Public pages
+// ── ALL ROUTES AS DIRECT DISPATCH (same pattern as /location) ────────────────
 if ($path === '/' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/home.php', false, false);
 
-// Auth
 if ($path === '/auth/login')
     dispatch(HK_ROOT . '/auth/login.php', false, false);
 
@@ -65,7 +75,6 @@ if ($path === '/auth/forgot')
 if ($path === '/auth/verify')
     dispatch(HK_ROOT . '/auth/verify.php', false, false);
 
-// Protected pages
 if ($path === '/dashboard' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/dashboard.php', true, false);
 
@@ -75,7 +84,6 @@ if ($path === '/upgrade')
 if ($path === '/payment/callback' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/payment-callback.php', true, false);
 
-// Feature pages — same direct dispatch pattern as /location
 if ($path === '/hustles' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/hustles.php', false, false);
 
@@ -91,47 +99,25 @@ if ($path === '/tools' && $method === 'GET')
 if ($path === '/ai' && $method === 'GET')
     dispatch(HK_ROOT . '/pages/ai.php', true, false);
 
-// API endpoints
-if ($path === '/api/profile' && $method === 'GET')
+if ($path === '/api/profile')
     dispatch(HK_ROOT . '/api/profile.php', true, false);
 
-if ($path === '/api/profile' && $method === 'PUT')
-    dispatch(HK_ROOT . '/api/profile.php', true, false);
-
-if ($path === '/api/income' && $method === 'GET')
+if ($path === '/api/income')
     dispatch(HK_ROOT . '/api/income.php', true, false);
 
-if ($path === '/api/income' && $method === 'POST')
-    dispatch(HK_ROOT . '/api/income.php', true, false);
-
-if ($path === '/api/income' && $method === 'DELETE')
-    dispatch(HK_ROOT . '/api/income.php', true, false);
-
-if ($path === '/api/goals' && $method === 'GET')
-    dispatch(HK_ROOT . '/api/goals.php', true, false);
-
-if ($path === '/api/goals' && $method === 'POST')
-    dispatch(HK_ROOT . '/api/goals.php', true, false);
-
-if ($path === '/api/goals' && $method === 'PUT')
-    dispatch(HK_ROOT . '/api/goals.php', true, false);
-
-if ($path === '/api/goals' && $method === 'DELETE')
+if ($path === '/api/goals')
     dispatch(HK_ROOT . '/api/goals.php', true, false);
 
 if ($path === '/api/hustles' && $method === 'GET')
     dispatch(HK_ROOT . '/api/hustles.php', false, false);
 
-if ($path === '/api/saved' && $method === 'GET')
-    dispatch(HK_ROOT . '/api/saved.php', true, false);
-
-if ($path === '/api/saved' && $method === 'POST')
+if ($path === '/api/saved')
     dispatch(HK_ROOT . '/api/saved.php', true, false);
 
 if ($path === '/api/referral' && $method === 'GET')
     dispatch(HK_ROOT . '/api/referral.php', true, false);
 
-if ($path === '/api/subscription' && $method === 'GET')
+if ($path === '/api/subscription')
     dispatch(HK_ROOT . '/api/subscription.php', true, false);
 
 if ($path === '/api/webhook/paystack' && $method === 'POST')
@@ -140,5 +126,12 @@ if ($path === '/api/webhook/paystack' && $method === 'POST')
 if ($path === '/api/migrate' && $method === 'POST')
     dispatch(HK_ROOT . '/api/migrate.php', true, false);
 
-// Nothing matched
-Response::notFound();
+// Nothing matched — show debug info instead of plain 404
+http_response_code(404);
+header('Content-Type: text/plain');
+echo "404 — No route matched\n\n";
+echo "REQUEST_URI = " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
+echo "SCRIPT_NAME = " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
+echo "basePath    = $basePath\n";
+echo "path        = $path\n";
+echo "method      = $method\n";
