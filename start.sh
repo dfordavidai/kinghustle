@@ -7,6 +7,13 @@ mkdir -p /tmp/sessions
 # ── Create logs directory ─────────────────────────────────────────────────────
 mkdir -p /app/logs
 
+# ── Ensure PDO MySQL extension is enabled ────────────────────────────────────
+PHP_INI_DIR=$(php82 --ini 2>/dev/null | grep "Scan for additional" | awk -F': ' '{print $2}')
+if [ -n "$PHP_INI_DIR" ]; then
+    echo "extension=pdo.so"        > "$PHP_INI_DIR/10_pdo.ini"
+    echo "extension=pdo_mysql.so"  > "$PHP_INI_DIR/20_pdo_mysql.ini"
+fi
+
 # ── Substitute $PORT into nginx config (Railway sets PORT dynamically) ────────
 export PORT="${PORT:-8080}"
 envsubst '$PORT' < /app/nginx.conf > /tmp/nginx.conf
