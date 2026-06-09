@@ -98,8 +98,8 @@ $recentIncome = array_slice($income30, 0, 5);
 
 // ── All hustles for browsing (limited) ────────────────────────────────────────
 $allHustles = DB::query(
-    'SELECT id, name, slug, emoji, category, income_min, income_max, income_period, difficulty, tags
-     FROM hustles ORDER BY RAND() LIMIT 50',
+    'SELECT id, name, slug, emoji, category, income_min, income_max, income_period, difficulty
+     FROM hustles WHERE is_active = 1 ORDER BY RAND() LIMIT 50',
     []
 );
 
