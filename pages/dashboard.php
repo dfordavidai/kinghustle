@@ -30,10 +30,10 @@ $total30 = array_sum(array_column($income30, 'amount'));
 
 // Income last 7 days for sparkline
 $income7 = DB::query(
-    'SELECT DATE_FORMAT(logged_at, "%a") as day_label, SUM(amount) as day_total
+    'SELECT DATE(logged_at) as day_date, DATE_FORMAT(MIN(logged_at), "%a") as day_label, SUM(amount) as day_total
      FROM income_log
      WHERE user_id = :uid AND logged_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-     GROUP BY DATE(logged_at) ORDER BY logged_at ASC',
+     GROUP BY DATE(logged_at) ORDER BY DATE(logged_at) ASC',
     [':uid' => $user['id']]
 );
 
