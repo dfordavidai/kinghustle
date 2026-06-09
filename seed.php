@@ -19,7 +19,7 @@ require_once HK_ROOT . '/config/app.php';
 require_once HK_ROOT . '/core/DB.php';
 
 // ── Security: require a secret key ──────────────────────────────────────────
-const SEED_KEY = 'change-this-to-a-secret-key-before-uploading';
+const SEED_KEY = 'Secretkey123';
 
 if (($_GET['key'] ?? '') !== SEED_KEY) {
     http_response_code(403);
