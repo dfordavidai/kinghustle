@@ -414,9 +414,25 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <div class="qa-icon">🎯</div>
     <div class="qa-label">Add Goal</div>
   </button>
-  <a href="<?= APP_URL ?>/" class="qa-btn">
-    <div class="qa-icon">🔍</div>
-    <div class="qa-label">Find Hustles</div>
+  <a href="<?= APP_URL ?>/hustles" class="qa-btn">
+    <div class="qa-icon">🔥</div>
+    <div class="qa-label">Browse Hustles</div>
+  </a>
+  <a href="<?= APP_URL ?>/execute" class="qa-btn">
+    <div class="qa-icon">⚡</div>
+    <div class="qa-label">Execute</div>
+  </a>
+  <a href="<?= APP_URL ?>/ideas" class="qa-btn">
+    <div class="qa-icon">💡</div>
+    <div class="qa-label">Ideas</div>
+  </a>
+  <a href="<?= APP_URL ?>/tools" class="qa-btn">
+    <div class="qa-icon">🛠</div>
+    <div class="qa-label">Tools</div>
+  </a>
+  <a href="<?= APP_URL ?>/ai" class="qa-btn">
+    <div class="qa-icon">🤖</div>
+    <div class="qa-label">AI Advisor</div>
   </a>
   <a href="<?= APP_URL ?>/upgrade" class="qa-btn">
     <div class="qa-icon">⭐</div>
@@ -540,7 +556,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 ═══════════════════════════════════ -->
 <div class="sec-head">
   <div class="sec-title">🔖 Saved Hustles</div>
-  <a href="<?= APP_URL ?>/" class="sec-all">Browse all →</a>
+  <a href="<?= APP_URL ?>/hustles" class="sec-all">Browse all →</a>
 </div>
 
 <?php if (empty($savedHustles)): ?>
@@ -568,7 +584,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 ═══════════════════════════════════ -->
 <div class="sec-head">
   <div class="sec-title">📂 Hustle Categories</div>
-  <a href="<?= APP_URL ?>/" class="sec-all">See all →</a>
+  <a href="<?= APP_URL ?>/ideas" class="sec-all">See all →</a>
 </div>
 <div class="catgrid">
   <a class="catcard cc-digital" href="<?= APP_URL ?>/?cat=digital"><span class="ci">💻</span><div class="cn">Digital & Tech</div><div class="cc">198 hustles</div></a>
@@ -587,7 +603,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 ═══════════════════════════════════ -->
 <div class="sec-head" style="margin-top:24px;">
   <div class="sec-title">🛠 Tools & Platforms</div>
-  <a href="<?= APP_URL ?>/?page=tools" class="sec-all">See all →</a>
+  <a href="<?= APP_URL ?>/tools" class="sec-all">See all →</a>
 </div>
 <div class="tools-scroll">
   <a class="tool-card" href="https://wa.me" target="_blank" rel="noopener">
@@ -684,7 +700,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 <?php if (!empty($allHustles)): ?>
 <div class="sec-head">
   <div class="sec-title">🔥 Discover Hustles</div>
-  <a href="<?= APP_URL ?>/" class="sec-all">See all →</a>
+  <a href="<?= APP_URL ?>/hustles" class="sec-all">See all →</a>
 </div>
 <div class="hustle-scroll">
   <?php foreach (array_slice($allHustles, 0, 12) as $h): ?>
@@ -753,21 +769,21 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <div class="bni">🏠</div>
     <div class="bnl">Home</div>
   </a>
-  <a href="<?= APP_URL ?>/dashboard" class="bnav active">
-    <div class="bni">📊</div>
-    <div class="bnl">Dashboard</div>
+  <a href="<?= APP_URL ?>/hustles" class="bnav">
+    <div class="bni">🔥</div>
+    <div class="bnl">Hustles</div>
   </a>
   <button class="bnav-log" onclick="openLogModal()">
     <div class="bnav-log-icon">+</div>
     <div class="bnl" style="font-size:8.5px;font-weight:700;font-family:'Bricolage Grotesque',sans-serif;color:var(--text3);">Log</div>
   </button>
-  <a href="<?= APP_URL ?>/" class="bnav">
-    <div class="bni">🔍</div>
-    <div class="bnl">Hustles</div>
+  <a href="<?= APP_URL ?>/ideas" class="bnav">
+    <div class="bni">💡</div>
+    <div class="bnl">Ideas</div>
   </a>
-  <a href="<?= APP_URL ?>/upgrade" class="bnav">
-    <div class="bni">👑</div>
-    <div class="bnl">Pro</div>
+  <a href="<?= APP_URL ?>/ai" class="bnav">
+    <div class="bni">🤖</div>
+    <div class="bnl">AI</div>
   </a>
 </nav>
 
