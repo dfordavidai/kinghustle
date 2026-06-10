@@ -213,22 +213,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .tt{background:var(--teal-light);color:var(--teal);}
 .tr{background:var(--red-light);color:var(--red);}
 
-/* ── CATEGORY GRID ── */
-.catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 16px;}
-.catcard{border:1.5px solid var(--border);border-radius:var(--r);padding:13px 9px 11px;text-align:center;cursor:pointer;transition:.18s;touch-action:manipulation;text-decoration:none;display:block;}
-.catcard:active{transform:scale(.96);}
-.catcard .ci{font-size:23px;margin-bottom:5px;display:block;}
-.catcard .cn{font-family:'Bricolage Grotesque',sans-serif;font-size:10.5px;font-weight:700;line-height:1.3;color:var(--text);}
-.catcard .cc{font-size:9.5px;font-weight:600;margin-top:3px;}
-.cc-digital{background:#e6f1fb;border-color:#b5d4f4;}.cc-digital .cc{color:#185fa5;}
-.cc-social{background:#eeedfe;border-color:#afa9ec;}.cc-social .cc{color:#534ab7;}
-.cc-ai{background:#faeeda;border-color:#fac775;}.cc-ai .cc{color:#854f0b;}
-.cc-trade{background:#faece7;border-color:#f5c4b3;}.cc-trade .cc{color:#993c1d;}
-.cc-creative{background:#fcebeb;border-color:#f7c1c1;}.cc-creative .cc{color:#a32d2d;}
-.cc-agro{background:#eaf7f1;border-color:#b2e0c8;}.cc-agro .cc{color:#0f6e56;}
-.cc-trades{background:#e1f5ee;border-color:#9fe1cb;}.cc-trades .cc{color:#0f6e56;}
-.cc-health{background:#e6f1fb;border-color:#85b7eb;}.cc-health .cc{color:#0c447c;}
-.cc-edu{background:#fbeaf0;border-color:#f4c0d1;}.cc-edu .cc{color:#993556;}
+
 
 /* ── TOOLS SECTION ── */
 .tools-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
@@ -407,72 +392,134 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 </div>
 
 <!-- ═══════════════════════════════════
-     BROWSE CATEGORIES
+     DISCOVER HUSTLES — ONLINE
 ═══════════════════════════════════ -->
+<?php
+// Separate allHustles into online and offline by category
+$onlineCategories  = ['digital','social','ai','creative','education','finance'];
+$offlineCategories = ['agro','trade','trades','health','realestate','transport'];
+$onlineHustles  = array_values(array_filter($allHustles, fn($h) => in_array($h['category'], $onlineCategories)));
+$offlineHustles = array_values(array_filter($allHustles, fn($h) => in_array($h['category'], $offlineCategories)));
+?>
 <div class="sec-head">
-  <div class="sec-title">📂 Hustle Categories</div>
-  <a href="<?= APP_URL ?>/ideas" class="sec-all">See all →</a>
+  <div class="sec-title">🔥 Discover Hustles</div>
+  <a href="<?= APP_URL ?>/hustles" class="sec-all">See all →</a>
 </div>
-<div class="catgrid">
-  <a class="catcard cc-digital" href="<?= APP_URL ?>/?cat=digital"><span class="ci">💻</span><div class="cn">Digital & Tech</div><div class="cc">198 hustles</div></a>
-  <a class="catcard cc-social" href="<?= APP_URL ?>/?cat=social"><span class="ci">📱</span><div class="cn">Social & Content</div><div class="cc">49 hustles</div></a>
-  <a class="catcard cc-ai" href="<?= APP_URL ?>/?cat=ai"><span class="ci">🤖</span><div class="cn">AI-Powered</div><div class="cc">22 hustles</div></a>
-  <a class="catcard cc-trade" href="<?= APP_URL ?>/?cat=trade"><span class="ci">🛒</span><div class="cn">Trading & Commerce</div><div class="cc">53 hustles</div></a>
-  <a class="catcard cc-creative" href="<?= APP_URL ?>/?cat=creative"><span class="ci">🎨</span><div class="cn">Creative & Media</div><div class="cc">74 hustles</div></a>
-  <a class="catcard cc-agro" href="<?= APP_URL ?>/?cat=agro"><span class="ci">🌾</span><div class="cn">Agro & Food</div><div class="cc">42 hustles</div></a>
-  <a class="catcard cc-trades" href="<?= APP_URL ?>/?cat=trades"><span class="ci">🏗️</span><div class="cn">Trades & Labour</div><div class="cc">12 hustles</div></a>
-  <a class="catcard cc-health" href="<?= APP_URL ?>/?cat=health"><span class="ci">💆</span><div class="cn">Health & Beauty</div><div class="cc">45 hustles</div></a>
-  <a class="catcard cc-edu" href="<?= APP_URL ?>/?cat=education"><span class="ci">🎓</span><div class="cn">Education & Coaching</div><div class="cc">41 hustles</div></a>
+
+<!-- Online Hustles sub-label -->
+<div style="padding:0 16px 8px;display:flex;align-items:center;gap:7px;">
+  <span style="font-size:11px;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;color:var(--blue);background:var(--blue-light);border:1px solid #b5d4f4;border-radius:20px;padding:4px 10px;">🌐 Online</span>
+</div>
+<div class="hustle-scroll">
+  <?php foreach (array_slice($onlineHustles, 0, 10) as $h): ?>
+    <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
+      <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
+      <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
+      <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
+      <div class="hc-tags">
+        <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
+      </div>
+    </a>
+  <?php endforeach; ?>
+  <?php if (empty($onlineHustles)): ?>
+    <?php foreach (array_slice($allHustles, 0, 8) as $h): ?>
+      <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
+        <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
+        <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
+        <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
+        <div class="hc-tags">
+          <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
+        </div>
+      </a>
+    <?php endforeach; ?>
+  <?php endif; ?>
+</div>
+
+<!-- Offline Hustles sub-label -->
+<div style="padding:8px 16px 8px;display:flex;align-items:center;gap:7px;">
+  <span style="font-size:11px;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;color:var(--orange);background:var(--orange-light);border:1px solid #f5c4b3;border-radius:20px;padding:4px 10px;">🏙️ Offline</span>
+</div>
+<div class="hustle-scroll">
+  <?php foreach (array_slice($offlineHustles, 0, 10) as $h): ?>
+    <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
+      <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
+      <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
+      <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
+      <div class="hc-tags">
+        <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
+      </div>
+    </a>
+  <?php endforeach; ?>
+  <?php if (empty($offlineHustles)): ?>
+    <?php foreach (array_slice($allHustles, 8, 8) as $h): ?>
+      <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
+        <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
+        <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
+        <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
+        <div class="hc-tags">
+          <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
+        </div>
+      </a>
+    <?php endforeach; ?>
+  <?php endif; ?>
 </div>
 
 <!-- ═══════════════════════════════════
-     TOOLS & PLATFORMS
+     SOCIAL MONEY
 ═══════════════════════════════════ -->
-<div class="sec-head" style="margin-top:24px;">
-  <div class="sec-title">🛠 Tools & Platforms</div>
+<?php
+// Social Money platforms data (mirrored from socialmoney.php)
+$dashSocialPlatforms = [
+  ['icon'=>'🎵','name'=>'TikTok',      'earn'=>'₦1k–₦50k/day',    'id'=>'tiktok',    'bg'=>'#e8f0fe','border'=>'#c5d8fc'],
+  ['icon'=>'📸','name'=>'Instagram',   'earn'=>'₦2k–₦100k/day',   'id'=>'instagram', 'bg'=>'#fce8f3','border'=>'#f5c5e3'],
+  ['icon'=>'▶️','name'=>'YouTube',     'earn'=>'$100–$10k/month',  'id'=>'youtube',   'bg'=>'#fce8e8','border'=>'#f5c5c5'],
+  ['icon'=>'💬','name'=>'WhatsApp',    'earn'=>'₦500–₦20k/day',   'id'=>'whatsapp',  'bg'=>'#e8fce8','border'=>'#c5f0c5'],
+  ['icon'=>'✈️','name'=>'Telegram',    'earn'=>'₦1k–₦50k/day',    'id'=>'telegram',  'bg'=>'#e8f4fc','border'=>'#c5e4f5'],
+];
+?>
+<div class="sec-head" style="margin-top:8px;">
+  <div class="sec-title">📱 Social Money</div>
+  <a href="<?= APP_URL ?>/socialmoney" class="sec-all">See all →</a>
+</div>
+<div class="hustle-scroll">
+  <?php foreach ($dashSocialPlatforms as $sp): ?>
+    <a class="hustle-card" href="<?= APP_URL ?>/socialmoney?p=<?= $sp['id'] ?>" style="background:<?= htmlspecialchars($sp['bg']) ?>;border-color:<?= htmlspecialchars($sp['border']) ?>;">
+      <span class="hc-emoji" style="font-size:28px;"><?= $sp['icon'] ?></span>
+      <div class="hc-name"><?= htmlspecialchars($sp['name']) ?></div>
+      <div class="hc-income"><?= htmlspecialchars($sp['earn']) ?></div>
+      <div class="hc-tags">
+        <span class="tag tb">Social</span>
+      </div>
+    </a>
+  <?php endforeach; ?>
+</div>
+
+<!-- ═══════════════════════════════════
+     OFFLINE MONEY-MAKING TOOLS
+═══════════════════════════════════ -->
+<?php
+// Offline tools data (mirrored from tools.php)
+$dashOfflineTools = [
+  ['emoji'=>'🚗','name'=>'Ride-Hailing Car','earn'=>'₦15k–₦40k/day','badge'=>'Ride-Hailing'],
+  ['emoji'=>'⚡','name'=>'Industrial Generator','earn'=>'₦20k–₦80k/day','badge'=>'Power'],
+  ['emoji'=>'📸','name'=>'Professional Camera','earn'=>'₦20k–₦150k/event','badge'=>'Photography'],
+  ['emoji'=>'🎤','name'=>'PA Sound System','earn'=>'₦30k–₦200k/event','badge'=>'Events'],
+  ['emoji'=>'🏠','name'=>'Short-Let Apartment','earn'=>'₦20k–₦80k/night','badge'=>'Real Estate'],
+];
+?>
+<div class="sec-head" style="margin-top:8px;">
+  <div class="sec-title">🏗️ Offline Money-Making Tools</div>
   <a href="<?= APP_URL ?>/tools" class="sec-all">See all →</a>
 </div>
 <div class="tools-scroll">
-  <a class="tool-card" href="https://wa.me" target="_blank" rel="noopener">
-    <span class="tc-emoji">💬</span>
-    <div class="tc-name">WhatsApp Business</div>
-    <span class="tc-badge tg">Free</span>
-  </a>
-  <a class="tool-card" href="https://selar.co" target="_blank" rel="noopener">
-    <span class="tc-emoji">🛒</span>
-    <div class="tc-name">Selar</div>
-    <span class="tc-badge tg">Sell Online</span>
-  </a>
-  <a class="tool-card" href="https://paystack.com" target="_blank" rel="noopener">
-    <span class="tc-emoji">💳</span>
-    <div class="tc-name">Paystack</div>
-    <span class="tc-badge tb">Payments</span>
-  </a>
-  <a class="tool-card" href="https://fiverr.com" target="_blank" rel="noopener">
-    <span class="tc-emoji">💼</span>
-    <div class="tc-name">Fiverr</div>
-    <span class="tc-badge tp">Freelance</span>
-  </a>
-  <a class="tool-card" href="https://upwork.com" target="_blank" rel="noopener">
-    <span class="tc-emoji">🌍</span>
-    <div class="tc-name">Upwork</div>
-    <span class="tc-badge tgd">USD Income</span>
-  </a>
-  <a class="tool-card" href="https://canva.com" target="_blank" rel="noopener">
-    <span class="tc-emoji">🎨</span>
-    <div class="tc-name">Canva</div>
-    <span class="tc-badge tg">Design</span>
-  </a>
-  <a class="tool-card" href="https://jumia.com.ng" target="_blank" rel="noopener">
-    <span class="tc-emoji">📦</span>
-    <div class="tc-name">Jumia Seller</div>
-    <span class="tc-badge to">E-commerce</span>
-  </a>
-  <a class="tool-card" href="https://moniepoint.com" target="_blank" rel="noopener">
-    <span class="tc-emoji">🏦</span>
-    <div class="tc-name">Moniepoint</div>
-    <span class="tc-badge tg">POS/Agency</span>
-  </a>
+  <?php foreach ($dashOfflineTools as $t): ?>
+    <a class="tool-card" href="<?= APP_URL ?>/tools">
+      <span class="tc-emoji"><?= $t['emoji'] ?></span>
+      <div class="tc-name"><?= htmlspecialchars($t['name']) ?></div>
+      <div style="font-size:11px;font-weight:700;color:var(--green3);margin:3px 0 5px;"><?= htmlspecialchars($t['earn']) ?></div>
+      <span class="tc-badge to"><?= htmlspecialchars($t['badge']) ?></span>
+    </a>
+  <?php endforeach; ?>
 </div>
 
 <!-- ═══════════════════════════════════
@@ -521,27 +568,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 </div>
 <?php endif; ?>
 
-<!-- ═══════════════════════════════════
-     BROWSE HUSTLES (from DB)
-═══════════════════════════════════ -->
-<?php if (!empty($allHustles)): ?>
-<div class="sec-head">
-  <div class="sec-title">🔥 Discover Hustles</div>
-  <a href="<?= APP_URL ?>/hustles" class="sec-all">See all →</a>
-</div>
-<div class="hustle-scroll">
-  <?php foreach (array_slice($allHustles, 0, 12) as $h): ?>
-    <a class="hustle-card" href="<?= APP_URL ?>/hustle/<?= htmlspecialchars($h['slug']) ?>">
-      <span class="hc-emoji"><?= htmlspecialchars($h['emoji']) ?></span>
-      <div class="hc-name"><?= htmlspecialchars($h['name']) ?></div>
-      <div class="hc-income"><?= fmt((float)$h['income_min']) ?>–<?= fmt((float)$h['income_max']) ?>/<?= htmlspecialchars($h['income_period']) ?></div>
-      <div class="hc-tags">
-        <span class="tag <?= htmlspecialchars($diffClass[$h['difficulty']] ?? 'tg') ?>"><?= htmlspecialchars($diffLabel[$h['difficulty']] ?? '') ?></span>
-      </div>
-    </a>
-  <?php endforeach; ?>
-</div>
-<?php endif; ?>
+
 
 <!-- ═══════════════════════════════════
      REFERRAL
