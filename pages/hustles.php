@@ -486,9 +486,9 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 </div>
 
 <?php else: ?>
-<!-- BROWSE LIST VIEW -->
+<!-- BROWSE LIST VIEW — only shown when a category/filter/search is active -->
+<?php if ($cat || $search || $filter || $income): ?>
 <div class="browse-section" style="margin-top:16px;">
-  <?php if ($cat || $search || $filter || $income): ?>
   <form method="GET" action="<?= APP_URL ?>/hustles" style="margin-bottom:12px;">
     <?php if ($cat):    ?><input type="hidden" name="cat"    value="<?= htmlspecialchars($cat)    ?>"/><?php endif; ?>
     <?php if ($filter): ?><input type="hidden" name="filter" value="<?= htmlspecialchars($filter) ?>"/><?php endif; ?>
@@ -498,15 +498,14 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
       <input type="text" name="q" placeholder="Search by name, keyword, tag…" value="<?= htmlspecialchars($search) ?>" autocomplete="off"/>
     </div>
   </form>
-  <?php endif; ?>
 
-  <?php if (empty($hustles) && ($cat || $search || $filter || $income)): ?>
+  <?php if (empty($hustles)): ?>
     <div class="empty">
       <div class="ei">🔍</div>
       <h3>No hustles found</h3>
       <p>Try different filters or search terms.</p>
     </div>
-  <?php elseif (!empty($hustles)): ?>
+  <?php else: ?>
     <div class="hustle-list">
       <?php foreach ($hustles as $h):
         $isSaved = in_array($h['slug'], $savedSlugs);
@@ -541,7 +540,8 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <?php endif; ?>
   <?php endif; ?>
 </div>
-<?php endif; ?>
+<?php endif; /* end: only show browse list when filter active */ ?>
+<?php endif; /* end: else (not swipe mode) */ ?>
 
 <div class="swipe-toast" id="swipe-toast"></div>
 
