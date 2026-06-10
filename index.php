@@ -64,6 +64,9 @@ if ($path === '/ideas') {
 if ($path === '/tools') {
     dispatch(HK_ROOT . '/pages/tools.php', true);
 }
+if ($path === '/socialmoney') {
+    dispatch(HK_ROOT . '/pages/socialmoney.php', true);
+}
 
 // ── PROTECTED PAGES ──────────────────────────────────────────────────────────
 if ($path === '/dashboard') {
