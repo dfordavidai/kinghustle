@@ -25,50 +25,55 @@ $limit    = 20;
 $offset   = ($page - 1) * $limit;
 
 // ── Category metadata ────────────────────────────────────────────────────────
+// health is positioned in top 3 (after digital and trade — the two largest categories)
 $categories = [
-    'agro'      => ['emoji' => '🌿', 'icon' => '🌱', 'label' => 'Agro & Food',             'color' => '#2d7a3a', 'bg' => '#e8f5eb'],
     'digital'   => ['emoji' => '💻', 'icon' => '🖥️', 'label' => 'Digital & Tech',          'color' => '#2055d4', 'bg' => '#edf2fd'],
+    'trade'     => ['emoji' => '🛒', 'icon' => '🛒', 'label' => 'Trading & Commerce',       'color' => '#be185d', 'bg' => '#fdf2f8'],
+    'health'    => ['emoji' => '💆', 'icon' => '💆', 'label' => 'Health & Beauty',           'color' => '#6b21a8', 'bg' => '#f5f3ff'],
+    'agro'      => ['emoji' => '🌿', 'icon' => '🌱', 'label' => 'Agro & Food',             'color' => '#2d7a3a', 'bg' => '#e8f5eb'],
     'social'    => ['emoji' => '📱', 'icon' => '📲', 'label' => 'Social & Content',         'color' => '#7c3aed', 'bg' => '#f3eefe'],
     'ai'        => ['emoji' => '🤖', 'icon' => '🤖', 'label' => 'AI-Powered',               'color' => '#b45309', 'bg' => '#fef3c7'],
-    'trade'     => ['emoji' => '🛒', 'icon' => '🛒', 'label' => 'Trading & Commerce',       'color' => '#be185d', 'bg' => '#fdf2f8'],
     'education' => ['emoji' => '🎓', 'icon' => '🎓', 'label' => 'Education & Coaching',     'color' => '#0369a1', 'bg' => '#e0f2fe'],
     'finance'   => ['emoji' => '💰', 'icon' => '💰', 'label' => 'Finance & Investment',     'color' => '#16a05a', 'bg' => '#ebf7f1'],
     'trades'    => ['emoji' => '🏗️', 'icon' => '🏗️', 'label' => 'Trades & Labour',         'color' => '#c2410c', 'bg' => '#fff7ed'],
     'creative'  => ['emoji' => '🎨', 'icon' => '🎨', 'label' => 'Creative & Media',         'color' => '#9d174d', 'bg' => '#fdf2f8'],
     'realestate'=> ['emoji' => '🏠', 'icon' => '🏠', 'label' => 'Real Estate',              'color' => '#075985', 'bg' => '#e0f2fe'],
     'transport' => ['emoji' => '🚗', 'icon' => '🚗', 'label' => 'Transport & Logistics',    'color' => '#92400e', 'bg' => '#fffbeb'],
-    'health'    => ['emoji' => '💆', 'icon' => '💆', 'label' => 'Health & Beauty',           'color' => '#6b21a8', 'bg' => '#f5f3ff'],
 ];
 
 // ── DB Counts per category ────────────────────────────────────────────────────
-// Accurate baseline counts — these reflect the real hustle database
+// Accurate baseline counts — derived from schema.sql (15 base) + seed_hustles.sql (475 rows)
+// Combined unique slugs per category as of last seed run.
 $accurateCounts = [
-    'digital'   => 198,
-    'social'    => 49,
-    'ai'        => 22,
-    'trade'     => 53,
-    'creative'  => 74,
-    'agro'      => 42,
-    'trades'    => 12,
-    'health'    => 45,
-    'education' => 41,
-    'finance'   => 30,
-    'realestate'=> 18,
-    'transport' => 15,
+    'digital'   => 128,  // 124 seed + 4 schema (freelance-graphics-design, content-writing-copywriting, video-editing, affiliate-marketing)
+    'trade'     => 148,  // 145 seed + 3 schema (dropshipping-nigeria, vtu-airtime-data-reselling, mini-importation)
+    'health'    => 21,
+    'agro'      => 36,
+    'social'    => 1,    // social-media-management (schema only; seed rows are tagged 'digital')
+    'ai'        => 10,   // 9 seed + 1 schema (ai-prompt-engineering)
+    'education' => 31,   // 30 seed + 1 schema (tutoring-nigeria)
+    'finance'   => 15,
+    'trades'    => 14,
+    'creative'  => 35,   // 34 seed + 1 schema (fashion-design-tailoring)
+    'realestate'=> 25,   // 24 seed + 1 schema (real-estate-agency)
+    'transport' => 24,   // 23 seed + 1 schema (ride-hailing-driver)
 ];
 $catCounts = $accurateCounts; // start with accurate baseline
 try {
     $rows = DB::query("SELECT category, COUNT(*) as cnt FROM hustles WHERE is_active=1 GROUP BY category", []);
     foreach ($rows as $r) {
-        // Only override if DB has more than the baseline (i.e., new entries added)
-        if ((int)$r['cnt'] > ($accurateCounts[$r['category']] ?? 0)) {
-            $catCounts[$r['category']] = (int)$r['cnt'];
+        $cat = $r['category'];
+        $dbCnt = (int)$r['cnt'];
+        // Always use the live DB count — it is the ground truth once the seed has run.
+        // Fall back to baseline only when a category has zero rows in the DB.
+        if ($dbCnt > 0) {
+            $catCounts[$cat] = $dbCnt;
         }
     }
-} catch (\Exception $e) { /* keep accurate baseline */ }
+} catch (\Exception $e) { /* keep accurate baseline on DB error */ }
 
 // ── Total / stats ─────────────────────────────────────────────────────────────
-$totalHustles = array_sum($catCounts) ?: 599;
+$totalHustles = array_sum($catCounts) ?: 488;
 $totalCats    = count($catCounts) ?: 12;
 
 // ── Build WHERE for hustle list ──────────────────────────────────────────────
