@@ -49,11 +49,14 @@ $lastMonth = (float)(DB::one(
 
 $monthChange = $lastMonth > 0 ? round((($thisMonth - $lastMonth) / $lastMonth) * 100) : null;
 
-// ── Referral ──────────────────────────────────────────────────────────────────
+// ── Referral (only subscribed referred users count) ───────────────────────────
 $refCount = (int)(DB::one(
-    'SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = :id',
+    'SELECT COUNT(*) as cnt FROM referrals r
+     JOIN users u ON u.id = r.referred_id
+     WHERE r.referrer_id = :id AND u.is_pro = 1 AND (u.pro_expires_at IS NULL OR u.pro_expires_at > NOW())',
     [':id' => $user['id']]
 )['cnt'] ?? 0);
+$refEarnings = $refCount * 500; // ₦500 per subscribed referral
 $shareUrl = APP_URL . '/auth/register?ref=' . urlencode($user['ref_code']);
 
 // ── All hustles for browsing (limited) ────────────────────────────────────────
@@ -252,21 +255,6 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 .acc-val{font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;line-height:1.2;}
 .acc-sub{font-size:11px;color:var(--text3);margin-top:2px;}
 
-/* ── MODALS ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--bg);border-radius:22px 22px 0 0;padding:20px 20px 40px;width:100%;max-width:430px;animation:slideUp .25s ease;}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
-.modal-title{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px;}
-.field{margin-bottom:13px;}
-.field label{display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;font-family:'Bricolage Grotesque',sans-serif;}
-.field input,.field select,.field textarea{width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:12px;font-size:13.5px;font-family:'Instrument Sans',sans-serif;color:var(--text);background:#fff;outline:none;transition:.2s;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);}
-.field textarea{resize:none;height:70px;}
-.modal-submit{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;margin-top:4px;transition:.15s;}
-.modal-submit:active{background:var(--green2);}
-
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0d0d0c;color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:30px;z-index:400;opacity:0;pointer-events:none;transition:.3s;white-space:nowrap;}
 .toast.show{opacity:1;}
@@ -337,8 +325,8 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
       <div class="hstat-l">Last 30 days</div>
     </div>
     <div class="hstat">
-      <div class="hstat-n"><?= $refCount ?></div>
-      <div class="hstat-l">Referrals</div>
+      <div class="hstat-n">₦<?= $refEarnings > 0 ? number_format($refEarnings) : '0' ?></div>
+      <div class="hstat-l">Ref Earnings</div>
     </div>
   </div>
 
@@ -357,25 +345,25 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
      QUICK ACTIONS
 ═══════════════════════════════════ -->
 <div class="qa-grid">
-  <button class="qa-btn" onclick="openLogModal()">
-    <div class="qa-icon">💰</div>
-    <div class="qa-label">Log Income</div>
-  </button>
-  <button class="qa-btn" onclick="openGoalModal()">
-    <div class="qa-icon">🎯</div>
-    <div class="qa-label">Add Goal</div>
-  </button>
   <a href="<?= APP_URL ?>/hustles" class="qa-btn">
     <div class="qa-icon">🔥</div>
     <div class="qa-label">Browse Hustles</div>
   </a>
+  <a href="<?= APP_URL ?>/hustles/saved" class="qa-btn">
+    <div class="qa-icon">🔖</div>
+    <div class="qa-label">Saved Hustles</div>
+  </a>
   <a href="<?= APP_URL ?>/execute" class="qa-btn">
     <div class="qa-icon">⚡</div>
-    <div class="qa-label">Execute</div>
+    <div class="qa-label">Executed Hustles</div>
   </a>
-  <a href="<?= APP_URL ?>/ideas" class="qa-btn">
-    <div class="qa-icon">💡</div>
-    <div class="qa-label">Ideas</div>
+  <a href="<?= APP_URL ?>/socialmoney" class="qa-btn">
+    <div class="qa-icon">📱</div>
+    <div class="qa-label">Platforms</div>
+  </a>
+  <a href="<?= APP_URL ?>/glossary" class="qa-btn">
+    <div class="qa-icon">📖</div>
+    <div class="qa-label">Glossary</div>
   </a>
   <a href="<?= APP_URL ?>/tools" class="qa-btn">
     <div class="qa-icon">🛠</div>
@@ -385,7 +373,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <div class="qa-icon">🤖</div>
     <div class="qa-label">AI Advisor</div>
   </a>
-  <a href="<?= APP_URL ?>/upgrade" class="qa-btn">
+  <a href="<?= APP_URL ?>/upgrade" class="qa-btn" style="<?= $isPro ? 'opacity:.5;pointer-events:none;' : '' ?>">
     <div class="qa-icon">⭐</div>
     <div class="qa-label"><?= $isPro ? 'Pro Active' : 'Go Pro' ?></div>
   </a>
@@ -578,14 +566,28 @@ $dashOfflineTools = [
 </div>
 <div style="padding:0 16px;">
   <div class="ref-card">
-    <div class="ref-title">Invite friends, get Pro free 🎁</div>
-    <div class="ref-sub">Refer <?= REFERRAL_NEEDED ?> friends and get <?= REFERRAL_REWARD_DAYS ?> days of Pro free. You've referred <strong><?= $refCount ?></strong> so far.</div>
-    <div class="ref-dots">
-      <?php for ($i = 0; $i < REFERRAL_NEEDED; $i++): ?>
-        <div class="ref-dot <?= $i < $refCount ? 'filled' : '' ?>"><?= $i < $refCount ? '✓' : ($i + 1) ?></div>
-      <?php endfor; ?>
-      <div style="font-size:12px;color:var(--text2);margin-left:6px;line-height:26px;"><?= max(0, REFERRAL_NEEDED - $refCount) ?> more to unlock</div>
+    <div class="ref-title">Earn ₦500 per referral 💸</div>
+    <div class="ref-sub">You earn <strong>₦500</strong> for every friend who signs up with your link <em>and subscribes to Pro</em>. Free sign-ups don't count — only paying subscribers.</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;background:#fff;border:1.5px solid #e8d080;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:var(--gold2);"><?= $refCount ?></div>
+        <div style="font-size:10.5px;color:var(--text3);font-weight:600;margin-top:2px;">Paid Referrals</div>
+      </div>
+      <div style="flex:1;background:#fff;border:1.5px solid #e8d080;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:var(--green3);">₦<?= number_format($refEarnings) ?></div>
+        <div style="font-size:10.5px;color:var(--text3);font-weight:600;margin-top:2px;">Total Earned</div>
+      </div>
+      <div style="flex:1;background:#fff;border:1.5px solid #e8d080;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:var(--blue);">₦500</div>
+        <div style="font-size:10.5px;color:var(--text3);font-weight:600;margin-top:2px;">Per Subscriber</div>
+      </div>
     </div>
+
+    <div style="background:#fffbe8;border:1px solid #f0dc80;border-radius:10px;padding:9px 12px;font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.55;">
+      ⚠️ Only referred users who <strong>subscribe to Pro</strong> count toward your earnings. Free accounts do not qualify.
+    </div>
+
     <div class="ref-copy-row">
       <div class="ref-code-box" id="ref-code"><?= htmlspecialchars($user['ref_code']) ?></div>
       <button class="ref-copy-btn" onclick="copyRef()">Copy link</button>
@@ -621,75 +623,11 @@ $dashOfflineTools = [
   </a>
 </nav>
 
-<!-- ═══════════════════════════════════
-     LOG INCOME MODAL
-═══════════════════════════════════ -->
-<div class="modal-overlay" id="log-modal" onclick="closeOnBg(event,'log-modal')">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">💰 Log Income</div>
-    <div class="field">
-      <label>Amount (₦)</label>
-      <input type="number" id="log-amount" placeholder="e.g. 15000" min="1" inputmode="numeric"/>
-    </div>
-    <div class="field">
-      <label>Source / Hustle Name</label>
-      <input type="text" id="log-source" placeholder="e.g. Freelance Design, VTU, Catering…"/>
-    </div>
-    <div class="field">
-      <label>Date</label>
-      <input type="date" id="log-date" value="<?= date('Y-m-d') ?>"/>
-    </div>
-    <div class="field">
-      <label>Note (optional)</label>
-      <textarea id="log-note" placeholder="Any extra details…"></textarea>
-    </div>
-    <button class="modal-submit" onclick="submitIncome()">Save Income →</button>
-  </div>
-</div>
 
-<!-- ═══════════════════════════════════
-     ADD GOAL MODAL
-═══════════════════════════════════ -->
-<div class="modal-overlay" id="goal-modal" onclick="closeOnBg(event,'goal-modal')">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🎯 New Goal</div>
-    <div class="field">
-      <label>Goal Title</label>
-      <input type="text" id="goal-title" placeholder="e.g. Buy a laptop, Emergency fund…"/>
-    </div>
-    <div class="field">
-      <label>Emoji</label>
-      <input type="text" id="goal-emoji" placeholder="🎯" maxlength="2" value="🎯" style="max-width:80px;"/>
-    </div>
-    <div class="field">
-      <label>Target Amount (₦)</label>
-      <input type="number" id="goal-target" placeholder="e.g. 200000" min="1" inputmode="numeric"/>
-    </div>
-    <div class="field">
-      <label>Deadline (optional)</label>
-      <input type="date" id="goal-deadline"/>
-    </div>
-    <button class="modal-submit" onclick="submitGoal()">Create Goal →</button>
-  </div>
-</div>
 
-<!-- ═══════════════════════════════════
-     ADD FUNDS MODAL
-═══════════════════════════════════ -->
-<div class="modal-overlay" id="funds-modal" onclick="closeOnBg(event,'funds-modal')">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="funds-modal-title">Add Funds to Goal</div>
-    <input type="hidden" id="funds-goal-id"/>
-    <div class="field">
-      <label>Amount to Add (₦)</label>
-      <input type="number" id="funds-amount" placeholder="e.g. 5000" min="1" inputmode="numeric"/>
-    </div>
-    <button class="modal-submit" onclick="submitFunds()">Add Funds →</button>
-  </div>
-</div>
+
+
+
 
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
@@ -702,98 +640,6 @@ function showToast(msg, ms = 2500) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), ms);
-}
-
-function openLogModal()  { document.getElementById('log-modal').classList.add('open'); }
-function openGoalModal() { document.getElementById('goal-modal').classList.add('open'); }
-function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
-function closeOnBg(e, id){ if (e.target === document.getElementById(id)) closeModal(id); }
-
-function addToGoal(id, title) {
-  document.getElementById('funds-goal-id').value = id;
-  document.getElementById('funds-modal-title').textContent = '+ Add Funds: ' + title;
-  document.getElementById('funds-amount').value = '';
-  document.getElementById('funds-modal').classList.add('open');
-}
-
-async function api(method, url, body = null) {
-  const opts = { method, headers: {'Content-Type':'application/json','Accept':'application/json'}, credentials:'same-origin' };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
-  return res.json();
-}
-
-async function submitIncome() {
-  const amount = parseFloat(document.getElementById('log-amount').value);
-  const source = document.getElementById('log-source').value.trim();
-  const date   = document.getElementById('log-date').value;
-  const note   = document.getElementById('log-note').value.trim();
-  if (!amount || amount <= 0) { showToast('⚠️ Enter a valid amount'); return; }
-  if (!source) { showToast('⚠️ Enter a source name'); return; }
-  const r = await api('POST', '/api/income', { amount, custom_name: source, logged_at: date, note: note || null });
-  if (r.ok) {
-    showToast('✅ Income logged!');
-    closeModal('log-modal');
-    document.getElementById('log-amount').value = '';
-    document.getElementById('log-source').value = '';
-    document.getElementById('log-note').value = '';
-    const list = document.getElementById('income-list');
-    if (list) {
-      const fmtAmt = amount >= 1000000 ? '₦'+(amount/1000000).toFixed(1)+'M' : amount >= 1000 ? '₦'+(amount/1000).toFixed(1)+'k' : '₦'+amount.toLocaleString();
-      const row = document.createElement('div');
-      row.className = 'income-row';
-      row.id = 'income-'+(r.data?.id||Date.now());
-      row.innerHTML = `<div class="income-emoji">💰</div><div class="income-info"><div class="income-name">${source}</div><div class="income-date">${new Date(date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div></div><div style="display:flex;align-items:center;gap:8px;"><div class="income-amount">+${fmtAmt}</div><button onclick="deleteEntry(${r.data?.id})" style="background:none;border:none;font-size:14px;color:var(--text3);cursor:pointer;padding:4px;">🗑</button></div>`;
-      list.prepend(row);
-    }
-  } else { showToast('❌ ' + (r.error || 'Failed to log income')); }
-}
-
-async function deleteEntry(id) {
-  if (!confirm('Delete this income entry?')) return;
-  const r = await api('DELETE', '/api/income?id=' + id);
-  if (r.ok) { document.getElementById('income-'+id)?.remove(); showToast('🗑 Entry deleted'); }
-  else showToast('❌ Could not delete');
-}
-
-async function submitGoal() {
-  const title  = document.getElementById('goal-title').value.trim();
-  const emoji  = document.getElementById('goal-emoji').value.trim() || '🎯';
-  const target = parseFloat(document.getElementById('goal-target').value);
-  const deadline = document.getElementById('goal-deadline').value || null;
-  if (!title)             { showToast('⚠️ Enter a goal title'); return; }
-  if (!target || target <= 0) { showToast('⚠️ Enter a valid target amount'); return; }
-  const r = await api('POST', '/api/goals', { title, emoji, target_amount: target, deadline });
-  if (r.ok) { showToast('✅ Goal created!'); closeModal('goal-modal'); location.reload(); }
-  else showToast('❌ ' + (r.error || 'Failed to create goal'));
-}
-
-async function markGoalDone(id) {
-  if (!confirm('Mark this goal as completed? 🎉')) return;
-  const r = await api('PUT', '/api/goals?id=' + id, { is_completed: 1 });
-  if (r.ok) { showToast('🎉 Goal completed!'); location.reload(); }
-  else showToast('❌ ' + (r.error || 'Failed'));
-}
-
-async function deleteGoal(id) {
-  if (!confirm('Delete this goal?')) return;
-  const r = await api('DELETE', '/api/goals?id=' + id);
-  if (r.ok) { document.getElementById('goal-'+id)?.remove(); showToast('🗑 Goal deleted'); }
-  else showToast('❌ ' + (r.error || 'Failed'));
-}
-
-async function submitFunds() {
-  const id     = parseInt(document.getElementById('funds-goal-id').value);
-  const amount = parseFloat(document.getElementById('funds-amount').value);
-  if (!amount || amount <= 0) { showToast('⚠️ Enter a valid amount'); return; }
-  const goals = await api('GET', '/api/goals');
-  const goal  = goals.data?.find(g => g.id === id);
-  if (!goal) { showToast('❌ Goal not found'); return; }
-  const newAmount  = parseFloat(goal.current_amount) + amount;
-  const isComplete = newAmount >= parseFloat(goal.target_amount) ? 1 : 0;
-  const r = await api('PUT', '/api/goals?id=' + id, { current_amount: newAmount, is_completed: isComplete });
-  if (r.ok) { showToast(isComplete ? '🎉 Goal reached!' : '✅ Funds added!'); closeModal('funds-modal'); location.reload(); }
-  else showToast('❌ ' + (r.error || 'Failed'));
 }
 
 function copyRef() {
