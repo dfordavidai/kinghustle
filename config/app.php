@@ -70,6 +70,9 @@ define('PRO_ANNUAL_DAYS',    365);
 define('REFERRAL_NEEDED',    2);       // referrals needed for free Pro week
 define('REFERRAL_REWARD_DAYS', 7);
 
+// ── ADMIN ────────────────────────────────────────────────────────────────────
+define('ADMIN_SECRET', _env('ADMIN_SECRET', ''));
+
 // ── PATHS ────────────────────────────────────────────────────────────────────
 define('ROOT_DIR',   dirname(__DIR__));
 define('PUBLIC_DIR', ROOT_DIR);
