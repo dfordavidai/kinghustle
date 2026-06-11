@@ -278,7 +278,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
     <?php else: ?>
       <a href="<?= APP_URL ?>/upgrade" class="pro-chip">Go Pro →</a>
     <?php endif; ?>
-    <a href="<?= APP_URL ?>/auth/logout" class="nav-avatar" title="Log out"><?= htmlspecialchars($user['avatar_emoji']) ?></a>
+    <a href="<?= APP_URL ?>/profile" class="nav-avatar" title="My Profile"><?= htmlspecialchars($user['avatar_emoji']) ?></a>
   </div>
 </nav>
 
@@ -592,10 +592,71 @@ $dashOfflineTools = [
       <div class="ref-code-box" id="ref-code"><?= htmlspecialchars($user['ref_code']) ?></div>
       <button class="ref-copy-btn" onclick="copyRef()">Copy link</button>
     </div>
+
+    <?php if ($refEarnings > 0): ?>
+    <div style="margin-top:12px;">
+      <button
+        onclick="openWithdraw()"
+        style="width:100%;background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.02em;">
+        💸 Withdraw Earnings (₦<?= number_format($refEarnings) ?>)
+      </button>
+    </div>
+    <?php endif; ?>
   </div>
 </div>
 
 <div style="height:20px;"></div>
+
+<!-- ── WITHDRAWAL MODAL ── -->
+<div id="withdraw-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closeWithdraw()">
+  <div style="background:#fff;width:100%;max-width:430px;border-radius:20px 20px 0 0;padding:24px 20px 32px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;">Withdraw Earnings</div>
+      <button onclick="closeWithdraw()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);">×</button>
+    </div>
+
+    <div style="background:var(--green-light);border:1px solid #b2e0c8;border-radius:var(--rs);padding:12px 14px;margin-bottom:18px;">
+      <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:2px;">AVAILABLE BALANCE</div>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;color:var(--green);">₦<?= number_format($refEarnings) ?></div>
+    </div>
+
+    <div id="wd-error" style="display:none;background:#fdf0f0;border:1px solid #f0c0c0;border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;"></div>
+    <div id="wd-success" style="display:none;background:var(--green-light);border:1px solid #b2e0c8;border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--green3);margin-bottom:14px;"></div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;" id="wd-form">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;">Amount (₦)</label>
+        <input id="wd-amount" type="number" min="500" max="<?= $refEarnings ?>" value="<?= $refEarnings ?>"
+          style="width:100%;border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 14px;font-size:15px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;outline:none;"
+          placeholder="Minimum ₦500"/>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;">Bank Name</label>
+        <input id="wd-bank" type="text" placeholder="e.g. First Bank, GTBank, OPay"
+          style="width:100%;border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 14px;font-size:14px;font-family:'Instrument Sans',sans-serif;outline:none;"/>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;">Account Name</label>
+        <input id="wd-acct-name" type="text" placeholder="As it appears on your bank account"
+          style="width:100%;border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 14px;font-size:14px;font-family:'Instrument Sans',sans-serif;outline:none;"/>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;">Account Number</label>
+        <input id="wd-acct-num" type="text" inputmode="numeric" maxlength="10" placeholder="10-digit NUBAN"
+          style="width:100%;border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 14px;font-size:15px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;letter-spacing:.05em;outline:none;"/>
+      </div>
+
+      <div style="background:#fffbe8;border:1px solid #f0dc80;border-radius:var(--rs);padding:10px 12px;font-size:11.5px;color:var(--text2);line-height:1.55;">
+        ⏱️ Withdrawals are processed within <strong>3–5 business days</strong>. Make sure your account details are correct — we cannot reverse transfers.
+      </div>
+
+      <button id="wd-submit" onclick="submitWithdraw()"
+        style="width:100%;background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:13px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px;">
+        Submit Request
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════
      BOTTOM NAV
@@ -653,6 +714,68 @@ function copyRef() {
     document.execCommand('copy');
     document.body.removeChild(ta);
     showToast('🔗 Link copied!');
+  }
+}
+
+function openWithdraw() {
+  const overlay = document.getElementById('withdraw-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('wd-error').style.display = 'none';
+  document.getElementById('wd-success').style.display = 'none';
+  document.getElementById('wd-form').style.display = 'flex';
+}
+
+function closeWithdraw() {
+  document.getElementById('withdraw-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function submitWithdraw() {
+  const btn = document.getElementById('wd-submit');
+  const errBox = document.getElementById('wd-error');
+  const okBox  = document.getElementById('wd-success');
+  errBox.style.display = 'none';
+  okBox.style.display  = 'none';
+
+  const amount     = parseInt(document.getElementById('wd-amount').value, 10);
+  const bankName   = document.getElementById('wd-bank').value.trim();
+  const acctName   = document.getElementById('wd-acct-name').value.trim();
+  const acctNum    = document.getElementById('wd-acct-num').value.trim();
+
+  if (!amount || amount < 500)   { showErr('Minimum withdrawal is ₦500.'); return; }
+  if (!bankName)                  { showErr('Please enter your bank name.'); return; }
+  if (!acctName)                  { showErr('Please enter your account name.'); return; }
+  if (!/^\d{10}$/.test(acctNum)) { showErr('Account number must be exactly 10 digits.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const res  = await fetch('/api/referral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'withdraw', amount, bank_name: bankName, account_name: acctName, account_number: acctNum })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('wd-form').style.display = 'none';
+      okBox.textContent = '✅ ' + data.message;
+      okBox.style.display = 'block';
+      showToast('💸 Withdrawal request submitted!');
+    } else {
+      showErr(data.error || 'Something went wrong. Please try again.');
+    }
+  } catch (e) {
+    showErr('Network error. Please check your connection and try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+  }
+
+  function showErr(msg) {
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
   }
 }
 </script>
