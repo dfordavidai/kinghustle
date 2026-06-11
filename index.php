@@ -107,6 +107,18 @@ if ($path === '/api/hustles') {
 if ($path === '/api/saved') {
     dispatch(HK_ROOT . '/api/saved.php', true);
 }
+if ($path === '/glossary') {
+    dispatch(HK_ROOT . '/pages/glossary.php');
+}
+if ($path === '/profile') {
+    dispatch(HK_ROOT . '/pages/profile.php', true);
+}
+if ($path === '/settings') {
+    dispatch(HK_ROOT . '/pages/settings.php', true);
+}
+if ($path === '/admin') {
+    dispatch(HK_ROOT . '/pages/admin.php');
+}
 if ($path === '/api/referral') {
     dispatch(HK_ROOT . '/api/referral.php', true);
 }
