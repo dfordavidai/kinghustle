@@ -450,6 +450,9 @@ footer a:hover{text-decoration:underline;}
     <h2>⭐ Go Pro, earn more</h2>
     <p class="pro-sub">Unlock every edge HustleKingdom has to offer and give yourself a serious advantage.</p>
     <div class="pro-perks">
+      <div class="pro-perk"><div class="pro-perk-dot">✓</div>Access to all 500+ hustles — every category unlocked</div>
+      <div class="pro-perk"><div class="pro-perk-dot">✓</div>Unlimited hustle swipe mode — discover without limits</div>
+      <div class="pro-perk"><div class="pro-perk-dot">✓</div>International hustles — opportunities from other countries</div>
       <div class="pro-perk"><div class="pro-perk-dot">✓</div>Unlimited AI Hustle Strategist queries</div>
       <div class="pro-perk"><div class="pro-perk-dot">✓</div>Full week-by-week Roadmaps for every category</div>
       <div class="pro-perk"><div class="pro-perk-dot">✓</div>Earn ₦500 for every subscriber you refer</div>
@@ -468,7 +471,7 @@ footer a:hover{text-decoration:underline;}
 
 <!-- FOOTER -->
 <footer>
-  <p>Made with ❤️ for Nigerian hustlers &nbsp;·&nbsp; <a href="<?= APP_URL ?>/auth/login">Log in</a> &nbsp;·&nbsp; <a href="<?= APP_URL ?>/auth/register">Sign up</a></p>
+  <p>Built and Managed by <a href="https://instagram.com/daveaai" target="_blank" rel="noopener">DaveAI</a> &nbsp;·&nbsp; <a href="<?= APP_URL ?>/auth/login">Log in</a> &nbsp;·&nbsp; <a href="<?= APP_URL ?>/auth/register">Sign up</a></p>
 </footer>
 
 </body>
