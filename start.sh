@@ -18,8 +18,14 @@ export PORT="${PORT:-8080}"
 envsubst '$PORT' < /app/nginx.conf > /tmp/nginx.conf
 
 echo "Starting PHP-FPM..."
-php-fpm -D
+php-fpm -D --force-stderr
 sleep 1
 
+echo "--- php-fpm process check ---"
+ps aux | grep '[p]hp-fpm' || echo "WARNING: no php-fpm process found"
+
 echo "Starting Nginx on port $PORT..."
-exec nginx -c /tmp/nginx.conf -g "daemon off;"
+echo "--- nginx config test ---"
+nginx -t -c /tmp/nginx.conf -e /dev/stderr
+echo "--- launching nginx ---"
+exec nginx -c /tmp/nginx.conf -e /dev/stderr -g "daemon off;"
