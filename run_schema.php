@@ -35,11 +35,54 @@ if (!file_exists($filepath)) {
 $sql = file_get_contents($filepath);
 $pdo = DB::get();
 
-// Split on semicolons at end of line (schema.sql uses standard CREATE TABLE statements)
-$statements = array_filter(
-    array_map('trim', explode(";\n", $sql)),
-    fn($s) => $s !== '' && !str_starts_with($s, '--')
-);
+// Properly split into individual statements: walk char by char, tracking
+// whether we're inside a quoted string, so semicolons inside strings don't
+// cause bad splits, and multi-line statements are handled correctly.
+function splitSqlStatements(string $sql): array {
+    // Strip -- line comments (but not inside strings; schema.sql only uses
+    // them at line starts, which is safe enough for this one-time script)
+    $lines = explode("\n", $sql);
+    $lines = array_filter($lines, fn($l) => !str_starts_with(trim($l), '--'));
+    $sql = implode("\n", $lines);
+
+    $statements = [];
+    $buffer = '';
+    $inString = false;
+    $stringChar = '';
+    $len = strlen($sql);
+
+    for ($i = 0; $i < $len; $i++) {
+        $char = $sql[$i];
+        $buffer .= $char;
+
+        if ($inString) {
+            if ($char === $stringChar && ($sql[$i - 1] ?? '') !== '\\') {
+                $inString = false;
+            }
+            continue;
+        }
+
+        if ($char === "'" || $char === '"' || $char === '`') {
+            $inString = true;
+            $stringChar = $char;
+            continue;
+        }
+
+        if ($char === ';') {
+            $statements[] = trim($buffer, "; \t\n\r");
+            $buffer = '';
+        }
+    }
+
+    $remainder = trim($buffer, "; \t\n\r");
+    if ($remainder !== '') {
+        $statements[] = $remainder;
+    }
+
+    return array_values(array_filter($statements, fn($s) => $s !== ''));
+}
+
+$statements = splitSqlStatements($sql);
 
 $ran = 0;
 $errors = [];
@@ -70,4 +113,4 @@ if ($errors) {
 }
 
 echo "<p><strong>Now delete this file (run_schema.php) from your server/repo.</strong></p>";
-echo "<p>Next: visit <code>/seed.php?key=$SCHEMA_KEY</code> to seed hustles + roadmaps.</p>";
+echo "<p>Next: visit <code>/seed?key=" . SCHEMA_KEY . "</code> to seed hustles + roadmaps.</p>";
