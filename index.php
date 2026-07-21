@@ -132,6 +132,11 @@ if ($path === '/api/migrate') {
     dispatch(HK_ROOT . '/api/migrate.php', true);
 }
 
+// ── RUN SCHEMA (one-time table creation — delete run_schema.php after use) ───
+if ($path === '/run_schema') {
+    dispatch(HK_ROOT . '/run_schema.php');
+}
+
 // ── SEED (one-time data import — delete seed.php after use) ──────────────────
 if ($path === '/seed') {
     dispatch(HK_ROOT . '/seed.php');
